@@ -13,9 +13,7 @@ POS_OVER_THE_BODY = vp.vector(0, 0, 1)
 
 def main():
     setup_display()
-
     body1, body2 = create_bodies()
-    red_arrow, blue_arrow = create_arrows()
 
     t = 0
     freq = 100
@@ -24,18 +22,8 @@ def main():
     while t < 12:
         vp.rate(freq)
 
-        if t > 0 and t < 1:
-            F1 = 100 * vp.vector(1, 0, 0)
-        else:
-            F1 = vp.vector(0, 0, 0)
-
-        F2 = vp.vector(0, 0, 0)
-
-        updateBody(body1, F1, red_arrow, dt)
-        updateBody(body2, F2, blue_arrow, dt)
-
-        if checCollision(body1, body2):
-            collision(body1, body2)
+        set_thrust(t, body1, body2)
+        step_simulation(dt, body1, body2)
 
         t += dt
 
@@ -51,45 +39,62 @@ def create_bodies():
     body1.mass = 10  # kg
     body1.area = 10  # m^2
     body1.vel = vp.vector(0, 0, 0)  # m/s^2
+    body1.arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red)
+    body1.arrow.visible = False
 
     body2 = vp.cylinder(pos=vp.vector(3, 0.5, 0), axis=vp.vector(0, 0, 1), radius=1)
     body2.mass = 10  # kg
     body2.area = 10  # m^2
     body2.vel = vp.vector(0, 0, 0)  # m/s^2
+    body2.arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue)
+    body2.arrow.visible = False
 
     return body1, body2
 
 
-def create_arrows():
-    red_arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red)
-    red_arrow.visible = False
+def set_thrust(t, body1, body2):
+    if t > 0 and t < 1:
+        body1.force = 100 * vp.vector(1, 0, 0)
+    else:
+        body1.force = vp.vector(0, 0, 0)
 
-    blue_arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue)
-    blue_arrow.visible = False
-
-    return red_arrow, blue_arrow
+    body2.force = vp.vector(0, 0, 0)
 
 
-def updateBody(body, thrust, arrow, dt):
-    force = vp.vector(0, 0, 0)
+def step_simulation(dt, body1, body2):
+    visualize_thrust([body1, body2])
 
+    calc_forces(body1)
+    calc_forces(body2)
+
+    for body in [body1, body2]:
+        body.acc = body.force / body.mass
+        body.vel += body.acc * dt
+        body.pos += body.vel * dt
+
+    if checCollision(body1, body2):
+        collision(body1, body2)
+
+
+def calc_forces(body):
     # Poniżej pewnego progu nie obliczamy prędkości stycznej
     if body.vel.mag > TOLERANCE:
-        R = -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * DENSITY_OF_AIR * body.vel.mag**2 * body.area
-        force += R
+        body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * DENSITY_OF_AIR * body.vel.mag**2 * body.area
 
-    if thrust.mag > 0:
-        arrow.pos = POS_OVER_THE_BODY + body.pos
-        arrow.axis = 4 * thrust.norm()
-        arrow.visible = True
-    else:
-        arrow.visible = False
 
-    force += thrust
-
-    body.acc = force/body.mass
-    body.vel += body.acc * dt
-    body.pos += body.vel * dt
+def visualize_thrust(bodies):
+    """
+    Should be call bofore forces calculation, when body.forces is equal to
+    thrust only.
+    """
+    LEN_FACTOR = 4
+    for body in bodies:
+        if body.force.mag > 0:
+            body.arrow.pos = POS_OVER_THE_BODY + body.pos
+            body.arrow.axis = LEN_FACTOR * body.force.norm()
+            body.arrow.visible = True
+        else:
+            body.arrow.visible = False
 
 
 def checCollision(body1, body2):

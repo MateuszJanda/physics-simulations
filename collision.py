@@ -5,7 +5,6 @@ import vpython as vp
 import math
 
 
-TOLERANCE = 0.2
 LINEAR_DRAG_COEFFICIENT = 0.2
 DENSITY_OF_AIR = 1.168  # kg/m^3
 POS_OVER_THE_BODY = vp.vector(0, 0, 1)
@@ -72,14 +71,15 @@ def step_simulation(dt, body1, body2):
         body.vel += body.acc * dt
         body.pos += body.vel * dt
 
-    if checCollision(body1, body2):
-        collision(body1, body2)
+    resolve_collisions(body1, body2)
 
 
 def calc_forces(body):
-    # Poniżej pewnego progu nie obliczamy prędkości stycznej
+    TOLERANCE = 0.2
+
     if body.vel.mag > TOLERANCE:
-        body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * DENSITY_OF_AIR * body.vel.mag**2 * body.area
+        body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * /
+            DENSITY_OF_AIR * body.vel.mag**2 * body.area
 
 
 def visualize_thrust(bodies):
@@ -97,40 +97,26 @@ def visualize_thrust(bodies):
             body.arrow.visible = False
 
 
-def checCollision(body1, body2):
-    CTOL = 0.01
+def resolve_collisions(body1, body2):
+    DISTANCE_TOLERANCE = 0.01
 
     r = body1.radius + body2.radius
-    d = body1.pos - body2.pos
-    s = d.mag - r
+    dist = body1.pos - body2.pos
+    s = dist.mag - r
 
-    collisionNorm = d.norm()
-    relativVel = body1.vel - body2.vel
+    collision_normal = dist.norm()
+    relative_vel = body1.vel - body2.vel
+    relative_vel_normal = vp.dot(relative_vel, collision_normal)
 
-    vrn = vp.dot(relativVel, collisionNorm)
-    if math.fabs(s) <= CTOL and vrn < 0.0:
-        # zderzenie
-        return 1
-    elif s < -CTOL:
-        # penetracja
-        return -1
-    # bez zderzenia
-    return 0
+    if s > DISTANCE_TOLERANCE or relative_vel_normal > 0:
+        return
 
+    # https://en.wikipedia.org/wiki/Collision_response#Computing_impulse-based_reaction
+    COEFFICIENT_OF_RESTITUTION = 0.5
 
-def collision(body1, body2):
-    e = 0.5
-    relativVel = body1.vel - body2.vel
-    d = body1.pos - body2.pos
-    collisionNorm = d.norm()
-
-    # Wersja z książki
-    # j = ( -(1+e) * (dot(relativVel, collisionNorm))) / ( dot(collisionNorm, collisionNorm) * (1/body1.mass + 1/body2.mass))
-    # Ale dot(collisionNorm, collisionNorm) i tak zawsze da wynik 1.0
-    # Moja wersja
-    j = ( -(1+e) * (vp.dot(relativVel, collisionNorm))) / ( (1/body1.mass + 1/body2.mass))
-    body1.vel += j * collisionNorm / body1.mass
-    body2.vel -= j * collisionNorm / body2.mass
+    impulse = ( -(1+COEFFICIENT_OF_RESTITUTION) * (vp.dot(relative_vel, collision_normal))) / ( (1/body1.mass + 1/body2.mass))
+    body1.vel += impulse * collision_normal / body1.mass
+    body2.vel -= impulse * collision_normal / body2.mass
 
 
 if __name__ == '__main__':

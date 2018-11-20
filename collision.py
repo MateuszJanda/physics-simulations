@@ -78,7 +78,7 @@ def calc_forces(body):
     TOLERANCE = 0.2
 
     if body.vel.mag > TOLERANCE:
-        body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * /
+        body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * \
             DENSITY_OF_AIR * body.vel.mag**2 * body.area
 
 

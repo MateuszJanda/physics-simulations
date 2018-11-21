@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import vpython as vp
+import itertools as it
 import math
 
 
@@ -36,16 +37,16 @@ def setup_display():
 
 def create_bodies():
     body1 = vp.cylinder(pos=vp.vector(-5, 0, 0), axis=vp.vector(0, 0, 1), radius=1,
-        mass = 10,  # kg
-        area = 10,  # m^2
-        vel = vp.vector(0, 0, 0),  # m/s^2
-        arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red, visible=False))
+        mass=10,  # kg
+        area=10,  # m^2
+        vel=vp.vector(0, 0, 0),  # m/s^2
+        arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red, visible=False))
 
     body2 = vp.cylinder(pos=vp.vector(3, 0.5, 0), axis=vp.vector(0, 0, 1), radius=1,
-        mass = 10,  # kg
-        area = 10,  # m^2
-        vel = vp.vector(0, 0, 0),  # m/s^2
-        arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue, visible=False))
+        mass=10,  # kg
+        area=10,  # m^2
+        vel=vp.vector(0, 0, 0),  # m/s^2
+        arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue, visible=False))
 
     return [body1, body2]
 
@@ -57,26 +58,6 @@ def set_thrust(t, bodies):
         bodies[0].force = vp.vector(0, 0, 0)
 
     bodies[1].force = vp.vector(0, 0, 0)
-
-
-def step_simulation(dt, bodies):
-    for body in bodies:
-        calc_forces(body)
-
-    for body in bodies:
-        body.acc = body.force / body.mass
-        body.vel += body.acc * dt
-        body.pos += body.vel * dt
-
-    resolve_collisions(bodies[0], bodies[1])
-
-
-def calc_forces(body):
-    VEL_TOLERANCE = 0.2
-
-    if body.vel.mag > VEL_TOLERANCE:
-        body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * \
-            DENSITY_OF_AIR * body.vel.mag2 * body.area
 
 
 def visualize_thrust(bodies):
@@ -96,24 +77,63 @@ def visualize_thrust(bodies):
             body.arrow.visible = False
 
 
-def resolve_collisions(body1, body2):
-    # https://en.wikipedia.org/wiki/Collision_response#Computing_impulse-based_reaction
+def step_simulation(dt, bodies):
+    for body in bodies:
+        calc_forces(body)
+
+    for body in bodies:
+        body.acc = body.force / body.mass
+        body.vel += body.acc * dt
+        body.pos += body.vel * dt
+
+    collisions = find_collisions(bodies)
+    resolve_collisions(collisions)
+
+
+def calc_forces(body):
+    VEL_TOLERANCE = 0.2
+
+    if body.vel.mag > VEL_TOLERANCE:
+        body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * \
+            DENSITY_OF_AIR * body.vel.mag2 * body.area
+
+
+class Collision:
+    def __init__(self, body1, body2, relative_vel, collision_normal):
+        self.body1 = body1
+        self.body2 = body2
+        self.relative_vel = relative_vel
+        self.collision_normal = collision_normal
+
+
+def find_collisions(bodies):
     DISTANCE_VEL_TOLERANCE = 0.01
+    collisions = []
 
-    r = body1.radius + body2.radius
-    dist = body1.pos - body2.pos
-    s = dist.mag - r
+    for body1, body2 in it.combinations(bodies, 2):
+        r = body1.radius + body2.radius
+        dist = body1.pos - body2.pos
+        s = dist.mag - r
 
-    collision_normal = dist.norm()
-    relative_vel = body1.vel - body2.vel
-    relative_vel_normal = vp.dot(relative_vel, collision_normal)
+        collision_normal = dist.norm()
+        relative_vel = body1.vel - body2.vel
+        relative_vel_normal = vp.dot(relative_vel, collision_normal)
 
-    if s > DISTANCE_VEL_TOLERANCE or relative_vel_normal > 0:
-        return
+        if s > DISTANCE_VEL_TOLERANCE or relative_vel_normal > 0:
+            continue
 
-    impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * vp.dot(relative_vel, collision_normal)) / (1/body1.mass + 1/body2.mass)
-    body1.vel += impulse * collision_normal / body1.mass
-    body2.vel -= impulse * collision_normal / body2.mass
+        collisions.append(Collision(body1, body2, relative_vel, collision_normal))
+
+    return collisions
+
+
+def resolve_collisions(collisions):
+    # https://en.wikipedia.org/wiki/Collision_response#Computing_impulse-based_reaction
+    for c in collisions:
+        impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * vp.dot(c.relative_vel, c.collision_normal)) / \
+            (1/c.body1.mass + 1/c.body2.mass)
+        c.body1.vel += impulse * c.collision_normal / c.body1.mass
+        c.body2.vel -= impulse * c.collision_normal / c.body2.mass
 
 
 if __name__ == '__main__':

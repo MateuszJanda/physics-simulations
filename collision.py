@@ -62,7 +62,7 @@ def set_thrust(t, bodies):
 
 def visualize_thrust(bodies):
     """
-    Should be call bofore forces calculation, when body.forces is equal to
+    Should be call before forces calculation, when body.forces is equal to
     thrust only.
     """
     POS_OVER_THE_BODY = vp.vector(0, 0, 1)
@@ -107,22 +107,22 @@ class Collision:
 
 
 def find_collisions(bodies):
-    DISTANCE_VEL_TOLERANCE = 0.01
+    DISTANCE_TOLERANCE = 0.01
     collisions = []
 
     for body1, body2 in it.combinations(bodies, 2):
-        r = body1.radius + body2.radius
+        allowed_dist = body1.radius + body2.radius
         dist = body1.pos - body2.pos
-        s = dist.mag - r
+        real_dist = dist.mag - allowed_dist
 
+        # Perpendicular to action line
         collision_normal = dist.norm()
         relative_vel = body1.vel - body2.vel
-        relative_vel_normal = vp.dot(relative_vel, collision_normal)
+        # normal component of relative velocity
+        relative_vel_n = vp.dot(relative_vel, collision_normal)
 
-        if s > DISTANCE_VEL_TOLERANCE or relative_vel_normal > 0:
-            continue
-
-        collisions.append(Collision(body1, body2, relative_vel, collision_normal))
+        if real_dist < DISTANCE_TOLERANCE and relative_vel_n < 0:
+            collisions.append(Collision(body1, body2, relative_vel, collision_normal))
 
     return collisions
 

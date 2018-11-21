@@ -12,7 +12,7 @@ POS_OVER_THE_BODY = vp.vector(0, 0, 1)
 
 def main():
     setup_display()
-    body1, body2 = create_bodies()
+    bodies = create_bodies()
 
     t = 0
     freq = 100
@@ -21,8 +21,9 @@ def main():
     while t < 12:
         vp.rate(freq)
 
-        set_thrust(t, body1, body2)
-        step_simulation(dt, body1, body2)
+        set_thrust(t, bodies)
+        visualize_thrust(bodies)
+        step_simulation(dt, bodies)
 
         t += dt
 
@@ -34,44 +35,40 @@ def setup_display():
 
 
 def create_bodies():
-    body1 = vp.cylinder(pos=vp.vector(-5, 0, 0), axis=vp.vector(0, 0, 1), radius=1)
-    body1.mass = 10  # kg
-    body1.area = 10  # m^2
-    body1.vel = vp.vector(0, 0, 0)  # m/s^2
-    body1.arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red)
-    body1.arrow.visible = False
+    body1 = vp.cylinder(pos=vp.vector(-5, 0, 0), axis=vp.vector(0, 0, 1), radius=1,
+        mass = 10,  # kg
+        area = 10,  # m^2
+        vel = vp.vector(0, 0, 0),  # m/s^2
+        arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red, visible=False))
 
-    body2 = vp.cylinder(pos=vp.vector(3, 0.5, 0), axis=vp.vector(0, 0, 1), radius=1)
-    body2.mass = 10  # kg
-    body2.area = 10  # m^2
-    body2.vel = vp.vector(0, 0, 0)  # m/s^2
-    body2.arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue)
-    body2.arrow.visible = False
+    body2 = vp.cylinder(pos=vp.vector(3, 0.5, 0), axis=vp.vector(0, 0, 1), radius=1,
+        mass = 10,  # kg
+        area = 10,  # m^2
+        vel = vp.vector(0, 0, 0),  # m/s^2
+        arrow = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue, visible=False))
 
-    return body1, body2
+    return [body1, body2]
 
 
-def set_thrust(t, body1, body2):
+def set_thrust(t, bodies):
     if t > 0 and t < 1:
-        body1.force = 100 * vp.vector(1, 0, 0)
+        bodies[0].force = 100 * vp.vector(1, 0, 0)
     else:
-        body1.force = vp.vector(0, 0, 0)
+        bodies[0].force = vp.vector(0, 0, 0)
 
-    body2.force = vp.vector(0, 0, 0)
+    bodies[1].force = vp.vector(0, 0, 0)
 
 
-def step_simulation(dt, body1, body2):
-    visualize_thrust([body1, body2])
+def step_simulation(dt, bodies):
+    for body in bodies:
+        calc_forces(body)
 
-    calc_forces(body1)
-    calc_forces(body2)
-
-    for body in [body1, body2]:
+    for body in bodies:
         body.acc = body.force / body.mass
         body.vel += body.acc * dt
         body.pos += body.vel * dt
 
-    resolve_collisions(body1, body2)
+    resolve_collisions(bodies[0], bodies[1])
 
 
 def calc_forces(body):

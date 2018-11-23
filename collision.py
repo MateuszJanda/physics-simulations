@@ -118,7 +118,7 @@ def find_collisions(bodies):
         # Perpendicular to action line
         collision_normal = dist.norm()
         relative_vel = body1.vel - body2.vel
-        # normal component of relative velocity
+        # normal component of relative velocity - does two bodies are on collision course
         relative_vel_n = vp.dot(relative_vel, collision_normal)
 
         if real_dist < DISTANCE_TOLERANCE and relative_vel_n < 0:

@@ -121,19 +121,7 @@ def step_simulation(dt, bodies):
         calc_forces(dt, body)
 
     for body in bodies:
-        body.acc = body.force/body.mass
-        body.vel += body.acc * dt
-        body.pos += body.vel * dt
-
-
-        M = vp.vector(0, 0, 0)
-        body.angularAcc = M/body.inertia
-        body.ang_vel += body.angularAcc * dt
-        angleGrowth = body.ang_vel.z * dt
-
-        body.rotate(angle=angleGrowth, axis=vp.vector(0, 0, 1))
-        body.theta += angleGrowth
-        body.vertices = vertices(body)
+        integrate(dt, body)
 
 
 def calc_forces(dt, body):
@@ -142,6 +130,21 @@ def calc_forces(dt, body):
     if body.vel.mag > VEL_TOLERANCE:
         body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * \
             DENSITY_OF_AIR * body.vel.mag2 * body.area
+
+
+def integrate(dt, body):
+    body.acc = body.force/body.mass
+    body.vel += body.acc * dt
+    body.pos += body.vel * dt
+
+    M = vp.vector(0, 0, 0)
+    body.ang_acc = M/body.inertia
+    body.ang_vel += body.ang_acc * dt
+    angle_growth = body.ang_vel.z * dt
+
+    body.rotate(angle=angle_growth, axis=vp.vector(0, 0, 1))
+    body.theta += angle_growth
+    body.vertices = vertices(body)
 
 
 def checkCollision(body1, body2):

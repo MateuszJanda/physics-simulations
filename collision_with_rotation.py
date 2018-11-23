@@ -10,7 +10,6 @@ CTOL = 0.01
 TOLERANCE = 0.2
 LINEAR_DRAG_COEFFICIENT = 0.2
 DENSITY_OF_AIR = 1.168  # kg/m^3
-OVER_THE_BODY = vp.vector(0, 0, 1)
 
 COLLISION = 1
 PENETRATION = -1
@@ -29,6 +28,7 @@ def main():
         vp.rate(freq)
 
         set_thrust(t, bodies)
+        visualize_thrust(bodies)
         step_simulation(dt, bodies)
 
         data = checkCollision(bodies[0], bodies[1])
@@ -52,7 +52,7 @@ def create_bodies():
         radius=1/2 * math.sqrt(width**2 + height**2),
         mass=10,  # kg
         inertia=100,
-        projectedArea=10,  # m^2
+        area=10,  # m^2
         vel=vp.vector(0, 0, 0),
         ang_vel=vp.vector(0, 0, 0),
         theta=vp.radians(20))
@@ -64,7 +64,7 @@ def create_bodies():
         radius=1/2 * math.sqrt(width**2 + height**2),
         mass=10,  # kg
         inertia=100,
-        projectedArea=10,  # m^2
+        area=10,  # m^2
         vel=vp.vector(0, 0, 0),
         ang_vel=vp.vector(0, 0, 0),
         theta=vp.radians(0))
@@ -99,8 +99,24 @@ def set_thrust(t, bodies):
     bodies[1].force = vp.vector(0, 0, 0)
 
 
+def visualize_thrust(bodies):
+    """
+    Should be call before forces calculation, when body.forces is equal to
+    thrust only.
+    """
+    POS_OVER_THE_BODY = vp.vector(0, 0, 1)
+    LENGTH_FACTOR = 4
+
+    for body in bodies:
+        if body.force.mag > 0:
+            body.arrow.pos = POS_OVER_THE_BODY + body.pos
+            body.arrow.axis = LENGTH_FACTOR * body.force.norm()
+            body.arrow.visible = True
+        else:
+            body.arrow.visible = False
+
+
 def step_simulation(dt, bodies):
-    print('a')
     for body in bodies:
         calc_forces(dt, body)
 
@@ -121,21 +137,11 @@ def step_simulation(dt, bodies):
 
 
 def calc_forces(dt, body):
-    F = vp.vector(0, 0, 0)
+    VEL_TOLERANCE = 0.2
 
-    # Poniżej pewnego progu nie obliczamy prędkości stycznej
-    if body.vel.mag > TOLERANCE:
-        R = -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * DENSITY_OF_AIR * body.vel.mag**2 * body.projectedArea
-        F += R
-
-    if body.force.mag > 0:
-        body.arrow.pos = OVER_THE_BODY + body.pos
-        body.arrow.axis = 4 * body.force.norm()
-        body.arrow.visible = True
-    else:
-        body.arrow.visible = False
-
-    body.force += F
+    if body.vel.mag > VEL_TOLERANCE:
+        body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * \
+            DENSITY_OF_AIR * body.vel.mag2 * body.area
 
 
 def checkCollision(body1, body2):

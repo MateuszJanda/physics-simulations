@@ -19,7 +19,7 @@ NO_COLLISION = 0
 
 def main():
     setup_display()
-    body1, body2 = create_bodies()
+    bodies = create_bodies()
 
     freq = 100
     dt = 1/freq
@@ -28,19 +28,13 @@ def main():
     while t < 6:
         vp.rate(freq)
 
-        if t > 0 and t < 1:
-            F1 = 100 * vp.rotate(vp.vector(1, 0, 0), body1.theta, vp.vector(0, 0, 1))
-        else:
-            F1 = vp.vector(0, 0, 0)
+        set_thrust(t, bodies)
+        updateBody(bodies[0], dt)
+        updateBody(bodies[1], dt)
 
-        F2 = vp.vector(0, 0, 0)
-
-        updateBody(body1, F1, dt)
-        updateBody(body2, F2, dt)
-
-        data = checkCollision(body1, body2)
+        data = checkCollision(bodies[0], bodies[1])
         if data:
-            collision(body1, body2, *data)
+            collision(bodies[0], bodies[1], *data)
 
         t += dt
 
@@ -76,14 +70,13 @@ def create_bodies():
         ang_vel=vp.vector(0, 0, 0),
         theta=vp.radians(0))
 
-
     body1.vertices = vertices(body1)
     body2.vertices = vertices(body2)
 
     body1.rotate(angle=body1.theta)
     body2.rotate(angle=body2.theta)
 
-    return body1, body2
+    return [body1, body2]
 
 
 def vertices(body):
@@ -98,7 +91,16 @@ def vertices(body):
     return body_vertices
 
 
-def updateBody(body, Ftrust, dt):
+def set_thrust(t, bodies):
+    if t > 0 and t < 1:
+        bodies[0].force = 100 * vp.rotate(vp.vector(1, 0, 0), bodies[0].theta, vp.vector(0, 0, 1))
+    else:
+        bodies[0].force = vp.vector(0, 0, 0)
+
+    bodies[1].force = vp.vector(0, 0, 0)
+
+
+def updateBody(body, dt):
     F = vp.vector(0, 0, 0)
     M = vp.vector(0, 0, 0)
 
@@ -107,14 +109,14 @@ def updateBody(body, Ftrust, dt):
         R = -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * DENSITY_OF_AIR * body.vel.mag**2 * body.projectedArea
         F += R
 
-    if Ftrust.mag > 0:
+    if body.force.mag > 0:
         body.arrow.pos = OVER_THE_BODY + body.pos
-        body.arrow.axis = 4 * Ftrust.norm()
+        body.arrow.axis = 4 * body.force.norm()
         body.arrow.visible = True
     else:
         body.arrow.visible = False
 
-    F += Ftrust
+    F += body.force
 
     body.acc = F/body.mass
     body.vel += body.acc * dt
@@ -163,15 +165,15 @@ def checkNodeNode(body1, body2):
             collisionNorm = body1.pos - body2.pos
             collisionNorm = collisionNorm.norm()
 
-            v1 = body1.vel + cross(body1.ang_vel, body1.collisionPoint)
-            v2 = body2.vel + cross(body2.ang_vel, body2.collisionPoint)
+            v1 = body1.vel + vp.cross(body1.ang_vel, body1.collisionPoint)
+            v2 = body2.vel + vp.cross(body2.ang_vel, body2.collisionPoint)
 
             # Jest w książce, ale wydaje mi się, że wektor prędkości jest już obrócony
             # v1 = rotate(v1, angle=body1.theta, axis=(0, 0, 1))
             # v2 = rotate(v2, angle=body2.theta, axis=(0, 0, 1))
 
             relativVel = v1 - v2
-            vrn = dot(relativVel, collisionNorm)
+            vrn = vp.dot(relativVel, collisionNorm)
 
             if vrn < 0.0:
                 return collisionNorm, relativVel

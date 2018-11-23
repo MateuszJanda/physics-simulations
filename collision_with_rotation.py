@@ -20,7 +20,6 @@ NO_COLLISION = 0
 def main():
     setup_display()
     body1, body2 = create_bodies()
-    arrRed, arrBlue = createArrows()
 
     freq = 100
     dt = 1/freq
@@ -36,8 +35,8 @@ def main():
 
         F2 = vp.vector(0, 0, 0)
 
-        updateBody(body1, F1, arrRed, dt)
-        updateBody(body2, F2, arrBlue, dt)
+        updateBody(body1, F1, dt)
+        updateBody(body2, F2, dt)
 
         data = checkCollision(body1, body2)
         if data:
@@ -53,24 +52,32 @@ def setup_display():
 
 
 def create_bodies():
-    body1 = vp.box(pos=vp.vector(-5, 0, 0), axis=vp.vector(0, 0, 1), width=3, height=2)
-    body1.radius = 1/2 * math.sqrt(body1.width**2 + body1.height**2)
-    body1.mass = 10  # kg
-    body1.inertia = 100
-    body1.projectedArea = 10  # m^2
-    body1.vel = vp.vector(0, 0, 0)
-    body1.angularVel = vp.vector(0, 0, 0)
-    body1.theta = vp.radians(20)
-    body1.vertices = vertices(body1)
+    width = 3
+    height = 2
+    body1 = vp.box(pos=vp.vector(-5, 0, 0), axis=vp.vector(0, 0, 1), width=width, height=height,
+        arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red, visible=False),
+        radius=1/2 * math.sqrt(width**2 + height**2),
+        mass=10,  # kg
+        inertia=100,
+        projectedArea=10,  # m^2
+        vel=vp.vector(0, 0, 0),
+        ang_vel=vp.vector(0, 0, 0),
+        theta=vp.radians(20))
 
-    body2 = vp.box(pos=vp.vector(3, 0.5, 0), axis=vp.vector(0, 0, 1), width=2, height=3)
-    body2.radius = 1/2 * math.sqrt(body2.width**2 + body2.height**2)
-    body2.mass = 10  # kg
-    body2.inertia = 100
-    body2.projectedArea = 10  # m^2
-    body2.vel = vp.vector(0, 0, 0)
-    body2.angularVel = vp.vector(0, 0, 0)
-    body2.theta = vp.radians(0)
+    width = 2
+    height = 3
+    body2 = vp.box(pos=vp.vector(3, 0.5, 0), axis=vp.vector(0, 0, 1), width=width, height=height,
+        arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue, visible=False),
+        radius=1/2 * math.sqrt(width**2 + height**2),
+        mass=10,  # kg
+        inertia=100,
+        projectedArea=10,  # m^2
+        vel=vp.vector(0, 0, 0),
+        ang_vel=vp.vector(0, 0, 0),
+        theta=vp.radians(0))
+
+
+    body1.vertices = vertices(body1)
     body2.vertices = vertices(body2)
 
     body1.rotate(angle=body1.theta)
@@ -80,27 +87,18 @@ def create_bodies():
 
 
 def vertices(body):
-    bodyVertices = [vp.vector(body.width/2, body.height/2, 0),
-                    vp.vector(-body.width/2, body.height/2, 0),
-                    vp.vector(-body.width/2, -body.height/2, 0),
-                    vp.vector(body.width/2, -body.height/2, 0)]
+    body_vertices = [vp.vector(body.width/2, body.height/2, 0),
+                     vp.vector(-body.width/2, body.height/2, 0),
+                     vp.vector(-body.width/2, -body.height/2, 0),
+                     vp.vector(body.width/2, -body.height/2, 0)]
 
-    for idx, vx in enumerate(bodyVertices):
-        bodyVertices[idx] = vp.rotate(vx, angle=body.theta, axis=vp.vector(0, 0, 1)) + body.pos
+    for idx, vx in enumerate(body_vertices):
+        body_vertices[idx] = vp.rotate(vx, angle=body.theta, axis=vp.vector(0, 0, 1)) + body.pos
 
-    return bodyVertices
-
-
-def createArrows():
-    arrRed = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red)
-    arrRed.visible = False
-    arrBlue = vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue)
-    arrBlue.visible = False
-
-    return arrRed, arrBlue
+    return body_vertices
 
 
-def updateBody(body, Ftrust, arr, dt):
+def updateBody(body, Ftrust, dt):
     F = vp.vector(0, 0, 0)
     M = vp.vector(0, 0, 0)
 
@@ -110,11 +108,11 @@ def updateBody(body, Ftrust, arr, dt):
         F += R
 
     if Ftrust.mag > 0:
-        arr.pos = OVER_THE_BODY + body.pos
-        arr.axis = 4 * Ftrust.norm()
-        arr.visible = True
+        body.arrow.pos = OVER_THE_BODY + body.pos
+        body.arrow.axis = 4 * Ftrust.norm()
+        body.arrow.visible = True
     else:
-        arr.visible = False
+        body.arrow.visible = False
 
     F += Ftrust
 
@@ -123,8 +121,8 @@ def updateBody(body, Ftrust, arr, dt):
     body.pos += body.vel * dt
 
     body.angularAcc = M/body.inertia
-    body.angularVel += body.angularAcc * dt
-    angleGrowth = body.angularVel.z * dt
+    body.ang_vel += body.angularAcc * dt
+    angleGrowth = body.ang_vel.z * dt
 
     body.rotate(angle=angleGrowth, axis=vp.vector(0, 0, 1))
     body.theta += angleGrowth
@@ -165,8 +163,8 @@ def checkNodeNode(body1, body2):
             collisionNorm = body1.pos - body2.pos
             collisionNorm = collisionNorm.norm()
 
-            v1 = body1.vel + cross(body1.angularVel, body1.collisionPoint)
-            v2 = body2.vel + cross(body2.angularVel, body2.collisionPoint)
+            v1 = body1.vel + cross(body1.ang_vel, body1.collisionPoint)
+            v2 = body2.vel + cross(body2.ang_vel, body2.collisionPoint)
 
             # Jest w książce, ale wydaje mi się, że wektor prędkości jest już obrócony
             # v1 = rotate(v1, angle=body1.theta, axis=(0, 0, 1))
@@ -211,8 +209,8 @@ def checkNodeEdge(body1, body2):
             collisionNorm = vp.cross(vp.cross(u, p), u)
             collisionNorm = collisionNorm.norm()
 
-            v1 = body1.vel + vp.cross(body1.angularVel, body1.collisionPoint)
-            v2 = body2.vel + vp.cross(body2.angularVel, body2.collisionPoint)
+            v1 = body1.vel + vp.cross(body1.ang_vel, body1.collisionPoint)
+            v2 = body2.vel + vp.cross(body2.ang_vel, body2.collisionPoint)
 
             # Jest w książce, ale wydaje mi się, że wektor prędkości jest już obrócony
             # v1 = rotate(v1, angle=body1.theta, axis=(0, 0, 1))
@@ -260,10 +258,10 @@ def collision(body1, body2, collisionNorm, relativVel):
          vp.dot(collisionNorm, vp.cross(vp.cross(body2.collisionPoint, collisionNorm) / body2.inertia, body2.collisionPoint)))
 
     body1.vel += j * collisionNorm / body1.mass
-    body1.angularVel += vp.cross(body1.collisionPoint, (j * collisionNorm)) / body1.inertia
+    body1.ang_vel += vp.cross(body1.collisionPoint, (j * collisionNorm)) / body1.inertia
 
     body2.vel -= j * collisionNorm / body2.mass
-    body2.angularVel -= vp.cross(body2.collisionPoint, (j * collisionNorm)) / body2.inertia
+    body2.ang_vel -= vp.cross(body2.collisionPoint, (j * collisionNorm)) / body2.inertia
 
 
 if __name__ == '__main__':

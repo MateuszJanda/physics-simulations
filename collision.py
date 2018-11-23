@@ -101,6 +101,7 @@ def integrate(dt, body):
     body.vel += body.acc * dt
     body.pos += body.vel * dt
 
+
 class Collision:
     def __init__(self, body1, body2, relative_vel, collision_normal):
         self.body1 = body1

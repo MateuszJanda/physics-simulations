@@ -29,8 +29,7 @@ def main():
         vp.rate(freq)
 
         set_thrust(t, bodies)
-        updateBody(bodies[0], dt)
-        updateBody(bodies[1], dt)
+        step_simulation(dt, bodies)
 
         data = checkCollision(bodies[0], bodies[1])
         if data:
@@ -100,9 +99,29 @@ def set_thrust(t, bodies):
     bodies[1].force = vp.vector(0, 0, 0)
 
 
-def updateBody(body, dt):
+def step_simulation(dt, bodies):
+    print('a')
+    for body in bodies:
+        calc_forces(dt, body)
+
+    for body in bodies:
+        body.acc = body.force/body.mass
+        body.vel += body.acc * dt
+        body.pos += body.vel * dt
+
+
+        M = vp.vector(0, 0, 0)
+        body.angularAcc = M/body.inertia
+        body.ang_vel += body.angularAcc * dt
+        angleGrowth = body.ang_vel.z * dt
+
+        body.rotate(angle=angleGrowth, axis=vp.vector(0, 0, 1))
+        body.theta += angleGrowth
+        body.vertices = vertices(body)
+
+
+def calc_forces(dt, body):
     F = vp.vector(0, 0, 0)
-    M = vp.vector(0, 0, 0)
 
     # Poniżej pewnego progu nie obliczamy prędkości stycznej
     if body.vel.mag > TOLERANCE:
@@ -116,19 +135,7 @@ def updateBody(body, dt):
     else:
         body.arrow.visible = False
 
-    F += body.force
-
-    body.acc = F/body.mass
-    body.vel += body.acc * dt
-    body.pos += body.vel * dt
-
-    body.angularAcc = M/body.inertia
-    body.ang_vel += body.angularAcc * dt
-    angleGrowth = body.ang_vel.z * dt
-
-    body.rotate(angle=angleGrowth, axis=vp.vector(0, 0, 1))
-    body.theta += angleGrowth
-    body.vertices = vertices(body)
+    body.force += F
 
 
 def checkCollision(body1, body2):

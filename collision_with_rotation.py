@@ -2,18 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import vpython as vp
+import itertools as it
 import math
 
-# tolerancja błędu
-CTOL = 0.01
 
-TOLERANCE = 0.2
 LINEAR_DRAG_COEFFICIENT = 0.2
 DENSITY_OF_AIR = 1.168  # kg/m^3
-
-COLLISION = 1
-PENETRATION = -1
-NO_COLLISION = 0
+COEFFICIENT_OF_RESTITUTION = 0.5
 
 
 def main():
@@ -30,10 +25,6 @@ def main():
         set_thrust(t, bodies)
         visualize_thrust(bodies)
         step_simulation(dt, bodies)
-
-        data = checkCollision(bodies[0], bodies[1])
-        if data:
-            collision(bodies[0], bodies[1], *data)
 
         t += dt
 
@@ -123,6 +114,9 @@ def step_simulation(dt, bodies):
     for body in bodies:
         integrate(dt, body)
 
+    collisions = find_collisions(bodies)
+    resolve_collisions(collisions)
+
 
 def calc_forces(dt, body):
     VEL_TOLERANCE = 0.2
@@ -147,27 +141,41 @@ def integrate(dt, body):
     body.vertices = vertices(body)
 
 
-def checkCollision(body1, body2):
-    r = body1.radius + body2.radius
-    d = body2.pos - body1.pos
-    s = d.mag - r
+class Collision:
+    def __init__(self, body1, body2, relative_vel, collision_normal):
+        self.body1 = body1
+        self.body2 = body2
+        self.relative_vel = relative_vel
+        self.collision_normal = collision_normal
 
-    if s > CTOL:
-        return None
 
-    data = checkNodeNode(body1, body2)
-    if data:
-        return data
+def find_collisions(bodies):
+    CTOL = 0.01
+    collisions = []
 
-    data = checkNodeEdge(body1, body2)
-    if data:
-        return data
+    for body1, body2 in it.combinations(bodies, 2):
+        r = body1.radius + body2.radius
+        d = body2.pos - body1.pos
+        s = d.mag - r
 
-    data = checkNodePenetration(body1, body2)
-    if data:
-        return data
+        if s > CTOL:
+            continue
 
-    return None
+        c = checkNodeNode(body1, body2)
+        if c:
+            collisions.append(c)
+            continue
+
+        c = checkNodeEdge(body1, body2)
+        if c:
+            collisions.append(c)
+            continue
+
+        c = checkNodePenetration(body1, body2)
+        if c:
+            collisions.append(c)
+
+    return collisions
 
 
 def checkNodeNode(body1, body2):
@@ -175,24 +183,20 @@ def checkNodeNode(body1, body2):
         for vx2 in body2.vertices:
             if not arePointsEqual(vx1, vx2): continue
 
-            body1.collisionPoint = vx1 - body1.pos
-            body2.collisionPoint = vx1 - body2.pos
+            body1.collision_pt = vx1 - body1.pos
+            body2.collision_pt = vx1 - body2.pos
 
-            collisionNorm = body1.pos - body2.pos
-            collisionNorm = collisionNorm.norm()
+            collision_normal = body1.pos - body2.pos
+            collision_normal = collision_normal.norm()
 
-            v1 = body1.vel + vp.cross(body1.ang_vel, body1.collisionPoint)
-            v2 = body2.vel + vp.cross(body2.ang_vel, body2.collisionPoint)
+            v1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
+            v2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
 
-            # Jest w książce, ale wydaje mi się, że wektor prędkości jest już obrócony
-            # v1 = rotate(v1, angle=body1.theta, axis=(0, 0, 1))
-            # v2 = rotate(v2, angle=body2.theta, axis=(0, 0, 1))
-
-            relativVel = v1 - v2
-            vrn = vp.dot(relativVel, collisionNorm)
+            relative_vel = v1 - v2
+            vrn = vp.dot(relative_vel, collision_normal)
 
             if vrn < 0.0:
-                return collisionNorm, relativVel
+                return Collision(body1, body2, relative_vel, collision_normal)
 
     return None
 
@@ -221,24 +225,20 @@ def checkNodeEdge(body1, body2):
             dist = d.mag
             if dist > CTOL: continue
 
-            body1.collisionPoint = vx1 - body1.pos
-            body2.collisionPoint = vx1 - body2.pos
+            body1.collision_pt = vx1 - body1.pos
+            body2.collision_pt = vx1 - body2.pos
 
-            collisionNorm = vp.cross(vp.cross(u, p), u)
-            collisionNorm = collisionNorm.norm()
+            collision_normal = vp.cross(vp.cross(u, p), u)
+            collision_normal = collision_normal.norm()
 
-            v1 = body1.vel + vp.cross(body1.ang_vel, body1.collisionPoint)
-            v2 = body2.vel + vp.cross(body2.ang_vel, body2.collisionPoint)
+            v1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
+            v2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
 
-            # Jest w książce, ale wydaje mi się, że wektor prędkości jest już obrócony
-            # v1 = rotate(v1, angle=body1.theta, axis=(0, 0, 1))
-            # v2 = rotate(v2, angle=body2.theta, axis=(0, 0, 1))
-
-            relativVel = v1 - v2
-            vrn = vp.dot(relativVel, collisionNorm)
+            relative_vel = v1 - v2
+            vrn = vp.dot(relative_vel, collision_normal)
 
             if vrn < 0.0:
-                return collisionNorm, relativVel
+                return Collision(body1, body2, relative_vel, collision_normal)
 
     return None
 
@@ -257,29 +257,28 @@ def checkNodePenetration(body1, body2):
 
         if penetration:
             # TODO: Czy można to lepiej obliczyć?
-            body1.collisionPoint = vx1
-            body2.collisionPoint = vx1
-            collisionNorm = body1.pos - body2.pos
-            collisionNorm = collisionNorm.norm()
-            relativVel = body1.vel - body2.vel
-            return collisionNorm, relativVel
+            body1.collision_pt = vx1
+            body2.collision_pt = vx1
+            collision_normal = body1.pos - body2.pos
+            collision_normal = collision_normal.norm()
+            relative_vel = body1.vel - body2.vel
+            return Collision(body1, body2, relative_vel, collision_normal)
 
     return None
 
 
-def collision(body1, body2, collisionNorm, relativVel):
-    e = 0.5
+def resolve_collisions(collisions):
+    for c in collisions:
+        j = (-(1+COEFFICIENT_OF_RESTITUTION) * (vp.dot(c.relative_vel, c.collision_normal))) / \
+            ((1/c.body1.mass + 1/c.body2.mass) + \
+             vp.dot(c.collision_normal, vp.cross(vp.cross(c.body1.collision_pt, c.collision_normal) / c.body1.inertia, c.body1.collision_pt)) + \
+             vp.dot(c.collision_normal, vp.cross(vp.cross(c.body2.collision_pt, c.collision_normal) / c.body2.inertia, c.body2.collision_pt)))
 
-    j = (-(1+e) * (vp.dot(relativVel, collisionNorm))) / \
-        ((1/body1.mass + 1/body2.mass) + \
-         vp.dot(collisionNorm, vp.cross(vp.cross(body1.collisionPoint, collisionNorm) / body1.inertia, body1.collisionPoint)) + \
-         vp.dot(collisionNorm, vp.cross(vp.cross(body2.collisionPoint, collisionNorm) / body2.inertia, body2.collisionPoint)))
+        c.body1.vel += j * c.collision_normal / c.body1.mass
+        c.body1.ang_vel += vp.cross(c.body1.collision_pt, (j * c.collision_normal)) / c.body1.inertia
 
-    body1.vel += j * collisionNorm / body1.mass
-    body1.ang_vel += vp.cross(body1.collisionPoint, (j * collisionNorm)) / body1.inertia
-
-    body2.vel -= j * collisionNorm / body2.mass
-    body2.ang_vel -= vp.cross(body2.collisionPoint, (j * collisionNorm)) / body2.inertia
+        c.body2.vel -= j * c.collision_normal / c.body2.mass
+        c.body2.ang_vel -= vp.cross(c.body2.collision_pt, (j * c.collision_normal)) / c.body2.inertia
 
 
 if __name__ == '__main__':

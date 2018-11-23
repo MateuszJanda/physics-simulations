@@ -82,9 +82,7 @@ def step_simulation(dt, bodies):
         calc_forces(body)
 
     for body in bodies:
-        body.acc = body.force / body.mass
-        body.vel += body.acc * dt
-        body.pos += body.vel * dt
+        integrate(dt, body)
 
     collisions = find_collisions(bodies)
     resolve_collisions(collisions)
@@ -97,6 +95,11 @@ def calc_forces(body):
         body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * \
             DENSITY_OF_AIR * body.vel.mag2 * body.area
 
+
+def integrate(dt, body):
+    body.acc = body.force / body.mass
+    body.vel += body.acc * dt
+    body.pos += body.vel * dt
 
 class Collision:
     def __init__(self, body1, body2, relative_vel, collision_normal):

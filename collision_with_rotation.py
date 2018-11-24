@@ -124,19 +124,20 @@ def calc_forces(dt, body):
         body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * \
             DENSITY_OF_AIR * body.vel.mag2 * body.area
 
+    body.moment = vp.vector(0, 0, 0)
+
 
 def integrate(dt, body):
     body.acc = body.force/body.mass
     body.vel += body.acc * dt
     body.pos += body.vel * dt
 
-    M = vp.vector(0, 0, 0)
-    body.ang_acc = M/body.inertia
+    body.ang_acc = body.moment/body.inertia
     body.ang_vel += body.ang_acc * dt
-    angle_growth = body.ang_vel.z * dt
+    angle_diff = body.ang_vel.z * dt
+    body.theta += angle_diff
+    body.rotate(angle=angle_diff, axis=vp.vector(0, 0, 1))
 
-    body.rotate(angle=angle_growth, axis=vp.vector(0, 0, 1))
-    body.theta += angle_growth
     body.vertices = vertices(body)
 
 
@@ -181,7 +182,7 @@ def find_collisions(bodies):
 
 def collision_node_node(body1, body2):
     for pt1, pt2 in it.product(body1.vertices, body2.vertices):
-        if not equal_points(pt1, pt2):
+        if not close_points(pt1, pt2):
             continue
 
         collision_pt1 = pt1 - body1.pos
@@ -191,22 +192,20 @@ def collision_node_node(body1, body2):
 
         vel1 = body1.vel + vp.cross(body1.ang_vel, collision_pt1)
         vel2 = body2.vel + vp.cross(body2.ang_vel, collision_pt2)
-
         relative_vel = vel1 - vel2
-        relative_vel_n = vp.dot(relative_vel, collision_normal)
 
-        if relative_vel_n < 0:
+        if is_collision_course(relative_vel, collision_normal):
             return Collision(body1, body2, collision_pt1, collision_pt2, relative_vel, collision_normal)
 
     return None
 
 
-def equal_points(pt1, pt2, delta=0.3):
+def close_points(pt1, pt2, delta=0.3):
     return (pt1 - pt2).mag <= delta
 
 
 def collision_node_edge(body1, body2):
-    CTOL = 0.03
+    DISTANCE_TOLERANCE = 0.03
 
     for pt1, (pt2, pt2_next) in it.product(body1.vertices, zip(body2.vertices, body2.vertices[1:]+body2.vertices[:1])):
         edge = pt2_next - pt2
@@ -220,7 +219,7 @@ def collision_node_edge(body1, body2):
 
         # Daje taki sam wynik jak dist = (proj - p).mag
         dist = vp.mag(vp.cross(p, u))
-        if dist > CTOL:
+        if dist > DISTANCE_TOLERANCE:
             continue
 
         collision_pt1 = pt1 - body1.pos
@@ -230,14 +229,17 @@ def collision_node_edge(body1, body2):
 
         vel1 = body1.vel + vp.cross(body1.ang_vel, collision_pt1)
         vel2 = body2.vel + vp.cross(body2.ang_vel, collision_pt2)
-
         relative_vel = vel1 - vel2
-        relative_vel_n = vp.dot(relative_vel, collision_normal)
 
-        if relative_vel_n < 0:
+        if is_collision_course(relative_vel, collision_normal):
             return Collision(body1, body2, collision_pt1, collision_pt2, relative_vel, collision_normal)
 
     return None
+
+
+def is_collision_course(relative_vel, collision_normal):
+    relative_vel_n = vp.dot(relative_vel, collision_normal)
+    return relative_vel_n < 0
 
 
 def penetration_by_node(body1, body2):
@@ -263,8 +265,8 @@ def penetration_by_node(body1, body2):
 
 def resolve_collisions(collisions):
     for c in collisions:
-        impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * (vp.dot(c.relative_vel, c.collision_normal))) / \
-            ((1/c.body1.mass + 1/c.body2.mass) + \
+        impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * vp.dot(c.relative_vel, c.collision_normal)) / \
+            (1/c.body1.mass + 1/c.body2.mass + \
              vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt1, c.collision_normal) / c.body1.inertia, c.collision_pt1)) + \
              vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt2, c.collision_normal) / c.body2.inertia, c.collision_pt2)))
 

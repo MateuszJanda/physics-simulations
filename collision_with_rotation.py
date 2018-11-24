@@ -141,9 +141,11 @@ def integrate(dt, body):
 
 
 class Collision:
-    def __init__(self, body1, body2, relative_vel, collision_normal):
+    def __init__(self, body1, body2, collision_pt1, collision_pt2, relative_vel, collision_normal):
         self.body1 = body1
         self.body2 = body2
+        self.collision_pt1 = collision_pt1
+        self.collision_pt2 = collision_pt2
         self.relative_vel = relative_vel
         self.collision_normal = collision_normal
 
@@ -182,19 +184,19 @@ def checkNodeNode(body1, body2):
         if not arePointsEqual(vx1, vx2):
             continue
 
-        body1.collision_pt = vx1 - body1.pos
-        body2.collision_pt = vx1 - body2.pos
+        collision_pt1 = vx1 - body1.pos
+        collision_pt2 = vx1 - body2.pos
 
         collision_normal = vp.norm(body1.pos - body2.pos)
 
-        v1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
-        v2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
+        v1 = body1.vel + vp.cross(body1.ang_vel, collision_pt1)
+        v2 = body2.vel + vp.cross(body2.ang_vel, collision_pt2)
 
         relative_vel = v1 - v2
         vrn = vp.dot(relative_vel, collision_normal)
 
         if vrn < 0:
-            return Collision(body1, body2, relative_vel, collision_normal)
+            return Collision(body1, body2, collision_pt1, collision_pt2, relative_vel, collision_normal)
 
     return None
 
@@ -222,19 +224,19 @@ def checkNodeEdge(body1, body2):
         if dist > CTOL:
             continue
 
-        body1.collision_pt = vx1 - body1.pos
-        body2.collision_pt = vx1 - body2.pos
+        collision_pt1 = vx1 - body1.pos
+        collision_pt2 = vx1 - body2.pos
 
         collision_normal = vp.norm(vp.cross(vp.cross(u, p), u))
 
-        vel1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
-        vel2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
+        vel1 = body1.vel + vp.cross(body1.ang_vel, collision_pt1)
+        vel2 = body2.vel + vp.cross(body2.ang_vel, collision_pt2)
 
         relative_vel = vel1 - vel2
         vrn = vp.dot(relative_vel, collision_normal)
 
         if vrn < 0:
-            return Collision(body1, body2, relative_vel, collision_normal)
+            return Collision(body1, body2, collision_pt1, collision_pt2, relative_vel, collision_normal)
 
     return None
 
@@ -253,11 +255,9 @@ def checkNodePenetration(body1, body2):
 
         if penetration:
             # TODO: Czy można to lepiej obliczyć?
-            body1.collision_pt = vx1
-            body2.collision_pt = vx1
             collision_normal = vp.norm(body1.pos - body2.pos)
             relative_vel = body1.vel - body2.vel
-            return Collision(body1, body2, relative_vel, collision_normal)
+            return Collision(body1, body2, vx1, vx1, relative_vel, collision_normal)
 
     return None
 
@@ -266,14 +266,14 @@ def resolve_collisions(collisions):
     for c in collisions:
         impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * (vp.dot(c.relative_vel, c.collision_normal))) / \
             ((1/c.body1.mass + 1/c.body2.mass) + \
-             vp.dot(c.collision_normal, vp.cross(vp.cross(c.body1.collision_pt, c.collision_normal) / c.body1.inertia, c.body1.collision_pt)) + \
-             vp.dot(c.collision_normal, vp.cross(vp.cross(c.body2.collision_pt, c.collision_normal) / c.body2.inertia, c.body2.collision_pt)))
+             vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt1, c.collision_normal) / c.body1.inertia, c.collision_pt1)) + \
+             vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt2, c.collision_normal) / c.body2.inertia, c.collision_pt2)))
 
         c.body1.vel += impulse * c.collision_normal / c.body1.mass
-        c.body1.ang_vel += vp.cross(c.body1.collision_pt, (impulse * c.collision_normal)) / c.body1.inertia
+        c.body1.ang_vel += vp.cross(c.collision_pt1, (impulse * c.collision_normal)) / c.body1.inertia
 
         c.body2.vel -= impulse * c.collision_normal / c.body2.mass
-        c.body2.ang_vel -= vp.cross(c.body2.collision_pt, (impulse * c.collision_normal)) / c.body2.inertia
+        c.body2.ang_vel -= vp.cross(c.collision_pt2, (impulse * c.collision_normal)) / c.body2.inertia
 
 
 if __name__ == '__main__':

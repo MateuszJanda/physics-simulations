@@ -179,24 +179,23 @@ def find_collisions(bodies):
 
 
 def checkNodeNode(body1, body2):
-    for vx1 in body1.vertices:
-        for vx2 in body2.vertices:
-            if not arePointsEqual(vx1, vx2): continue
+    for vx1, vx2 in it.product(body1.vertices, body2.vertices):
+        if not arePointsEqual(vx1, vx2):
+            continue
 
-            body1.collision_pt = vx1 - body1.pos
-            body2.collision_pt = vx1 - body2.pos
+        body1.collision_pt = vx1 - body1.pos
+        body2.collision_pt = vx1 - body2.pos
 
-            collision_normal = body1.pos - body2.pos
-            collision_normal = collision_normal.norm()
+        collision_normal = vp.norm(body1.pos - body2.pos)
 
-            v1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
-            v2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
+        v1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
+        v2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
 
-            relative_vel = v1 - v2
-            vrn = vp.dot(relative_vel, collision_normal)
+        relative_vel = v1 - v2
+        vrn = vp.dot(relative_vel, collision_normal)
 
-            if vrn < 0.0:
-                return Collision(body1, body2, relative_vel, collision_normal)
+        if vrn < 0:
+            return Collision(body1, body2, relative_vel, collision_normal)
 
     return None
 
@@ -209,36 +208,38 @@ def arePointsEqual(pt1, pt2):
 def checkNodeEdge(body1, body2):
     CTOL = 0.03
 
-    for vx1 in body1.vertices:
-        for idx, vx2 in enumerate(body2.vertices):
-            edge = body2.vertices[(idx + 1) % 4] - body2.vertices[idx]
+    # for vx1 in body1.vertices:
+    for vx1, vxs2 in it.product(body1.vertices, zip(body2.vertices, body2.vertices[1:]+body2.vertices[:1])):
+        vx2, vx2_end = vxs2
+        # for idx, vx2 in enumerate(body2.vertices):
+            # edge = body2.vertices[(idx + 1) % 4] - body2.vertices[idx]
+        edge = vx2_end - vx2
 
-            u = edge
-            u = u.norm()
+        u = vp.norm(edge)
 
-            p = vx1 - vx2
-            proj = u * vp.dot(p, u)
-            if (proj + edge).mag <= edge.mag or proj.mag > edge.mag: continue
+        p = vx1 - vx2
+        proj = u * vp.dot(p, u)
+        if vp.mag(proj + edge) <= edge.mag or proj.mag > edge.mag:
+            continue
 
-            d = vp.cross(p, u)
-            # Daje taki sam wynik jak dist = (proj - p).mag
-            dist = d.mag
-            if dist > CTOL: continue
+        # Daje taki sam wynik jak dist = (proj - p).mag
+        dist = vp.mag(vp.cross(p, u))
+        if dist > CTOL:
+            continue
 
-            body1.collision_pt = vx1 - body1.pos
-            body2.collision_pt = vx1 - body2.pos
+        body1.collision_pt = vx1 - body1.pos
+        body2.collision_pt = vx1 - body2.pos
 
-            collision_normal = vp.cross(vp.cross(u, p), u)
-            collision_normal = collision_normal.norm()
+        collision_normal = vp.norm(vp.cross(vp.cross(u, p), u))
 
-            v1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
-            v2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
+        v1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
+        v2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
 
-            relative_vel = v1 - v2
-            vrn = vp.dot(relative_vel, collision_normal)
+        relative_vel = v1 - v2
+        vrn = vp.dot(relative_vel, collision_normal)
 
-            if vrn < 0.0:
-                return Collision(body1, body2, relative_vel, collision_normal)
+        if vrn < 0:
+            return Collision(body1, body2, relative_vel, collision_normal)
 
     return None
 

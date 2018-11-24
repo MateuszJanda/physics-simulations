@@ -60,13 +60,12 @@ def create_bodies():
         ang_vel=vp.vector(0, 0, 0),
         theta=vp.radians(0))
 
-    body1.vertices = vertices(body1)
-    body2.vertices = vertices(body2)
+    bodies = [body1, body2]
+    for body in bodies:
+        body.vertices = vertices(body)
+        body.rotate(angle=body.theta)
 
-    body1.rotate(angle=body1.theta)
-    body2.rotate(angle=body2.theta)
-
-    return [body1, body2]
+    return bodies
 
 
 def vertices(body):
@@ -208,17 +207,13 @@ def arePointsEqual(pt1, pt2):
 def checkNodeEdge(body1, body2):
     CTOL = 0.03
 
-    # for vx1 in body1.vertices:
-    for vx1, vxs2 in it.product(body1.vertices, zip(body2.vertices, body2.vertices[1:]+body2.vertices[:1])):
-        vx2, vx2_end = vxs2
-        # for idx, vx2 in enumerate(body2.vertices):
-            # edge = body2.vertices[(idx + 1) % 4] - body2.vertices[idx]
+    for vx1, (vx2, vx2_end) in it.product(body1.vertices, zip(body2.vertices, body2.vertices[1:]+body2.vertices[:1])):
         edge = vx2_end - vx2
 
         u = vp.norm(edge)
-
         p = vx1 - vx2
         proj = u * vp.dot(p, u)
+
         if vp.mag(proj + edge) <= edge.mag or proj.mag > edge.mag:
             continue
 
@@ -232,10 +227,10 @@ def checkNodeEdge(body1, body2):
 
         collision_normal = vp.norm(vp.cross(vp.cross(u, p), u))
 
-        v1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
-        v2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
+        vel1 = body1.vel + vp.cross(body1.ang_vel, body1.collision_pt)
+        vel2 = body2.vel + vp.cross(body2.ang_vel, body2.collision_pt)
 
-        relative_vel = v1 - v2
+        relative_vel = vel1 - vel2
         vrn = vp.dot(relative_vel, collision_normal)
 
         if vrn < 0:
@@ -260,8 +255,7 @@ def checkNodePenetration(body1, body2):
             # TODO: Czy można to lepiej obliczyć?
             body1.collision_pt = vx1
             body2.collision_pt = vx1
-            collision_normal = body1.pos - body2.pos
-            collision_normal = collision_normal.norm()
+            collision_normal = vp.norm(body1.pos - body2.pos)
             relative_vel = body1.vel - body2.vel
             return Collision(body1, body2, relative_vel, collision_normal)
 
@@ -270,16 +264,16 @@ def checkNodePenetration(body1, body2):
 
 def resolve_collisions(collisions):
     for c in collisions:
-        j = (-(1+COEFFICIENT_OF_RESTITUTION) * (vp.dot(c.relative_vel, c.collision_normal))) / \
+        impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * (vp.dot(c.relative_vel, c.collision_normal))) / \
             ((1/c.body1.mass + 1/c.body2.mass) + \
              vp.dot(c.collision_normal, vp.cross(vp.cross(c.body1.collision_pt, c.collision_normal) / c.body1.inertia, c.body1.collision_pt)) + \
              vp.dot(c.collision_normal, vp.cross(vp.cross(c.body2.collision_pt, c.collision_normal) / c.body2.inertia, c.body2.collision_pt)))
 
-        c.body1.vel += j * c.collision_normal / c.body1.mass
-        c.body1.ang_vel += vp.cross(c.body1.collision_pt, (j * c.collision_normal)) / c.body1.inertia
+        c.body1.vel += impulse * c.collision_normal / c.body1.mass
+        c.body1.ang_vel += vp.cross(c.body1.collision_pt, (impulse * c.collision_normal)) / c.body1.inertia
 
-        c.body2.vel -= j * c.collision_normal / c.body2.mass
-        c.body2.ang_vel -= vp.cross(c.body2.collision_pt, (j * c.collision_normal)) / c.body2.inertia
+        c.body2.vel -= impulse * c.collision_normal / c.body2.mass
+        c.body2.ang_vel -= vp.cross(c.body2.collision_pt, (impulse * c.collision_normal)) / c.body2.inertia
 
 
 if __name__ == '__main__':

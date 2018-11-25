@@ -25,13 +25,11 @@ def main():
     dt = 1/freq
     t = 0
 
-    while t < 3000:
+    while True:
         vp.rate(freq)
 
         step_simulation(dt, spring, load)
-
-        plt1.plot(pos=(t, load.force_k.y))
-        plt2.plot(pos=(t, load.force.y))
+        plot_data(t, load, plt1, plt2)
 
         t += dt
 
@@ -52,37 +50,30 @@ def create_bodies():
     celling_y = 4
     vp.box(pos=vp.vector(0, celling_y + 0.5, 0), length=6, height=1, width=6)
 
-    INIT_LENGTH = 3
-    spring = vp.helix(pos=vp.vector(0, celling_y, 0), axis=vp.vector(0, -INIT_LENGTH + 1, 0),
+    SPRING_INIT_LENGTH = 3
+    spring = vp.helix(pos=vp.vector(0, celling_y, 0), axis=vp.vector(0, -SPRING_INIT_LENGTH + 1, 0),
         thickness=1/10,
         radius=1,
-        init_length = INIT_LENGTH,
+        init_length=SPRING_INIT_LENGTH,
         const=5)  # N/m - one value for elacstic and dumping factor
 
     height = 2
-    INIT_POS = vp.vector(0, celling_y - spring.length - height/2, 0)
-    load = vp.box(pos=INIT_POS,
-        init_pos=INIT_POS,
+    LOAD_INIT_POS = vp.vector(0, celling_y - spring.length - height/2, 0)
+    load = vp.box(pos=LOAD_INIT_POS,
+        init_pos=LOAD_INIT_POS,
         height=height,
         width=2,
         length=2,
-        mass = 2,  # kg
-        vel = vp.vector(0, 0, 0))
+        mass=2,  # kg
+        vel=vp.vector(0, 0, 0))
 
     return spring, load
 
 
 def step_simulation(dt, spring, load):
     calc_forces(dt, spring, load)
-
-
-    load.acc = load.force / load.mass
-    load.vel += load.acc * dt
-    # load.pos += load.vel * dt + 0.5 * load.acc * dt**2
-    load.pos += load.vel * dt # TODO: który wzór ma mieć tutaj zastosowanie
-
-    # Nowa długość sprężyny
-    # spring.y == celling_y
+    integrate(dt, load)
+    # New spring length
     spring.length = spring.pos.y - load.pos.y - load.height/2
 
 
@@ -94,6 +85,17 @@ def calc_forces(dt, spring, load):
 
     load.force_k = force_k
     load.force = force_g + force_k
+
+
+def integrate(dt, load):
+    load.acc = load.force / load.mass
+    load.vel += load.acc * dt
+    load.pos += load.vel * dt
+
+
+def plot_data(t, load, plt1, plt2):
+    plt1.plot(pos=(t, load.force_k.y))
+    plt2.plot(pos=(t, load.force.y))
 
 
 if __name__ == '__main__':

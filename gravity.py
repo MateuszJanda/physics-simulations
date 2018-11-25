@@ -8,14 +8,15 @@ http://showmedo.com/videotutorials/video?name=pythonThompsonVPython8&fromSeriesI
 """
 
 import vpython as vp
+import itertools as it
 
 
 GRAVITY_ACC = 1.0
 
 
 def main():
-    pltX1, pltX2, pltY1, pltY2 = setup_display()
-    star, satellite1, satellite2 = create_bodies()
+    plt_x, plt_y = setup_display()
+    bodies = create_bodies()
 
     freq = 100
     dt = 1/freq
@@ -24,26 +25,10 @@ def main():
     while True:
         vp.rate(freq)
 
-        d1 = distance(star, satellite1)
-        d2 = distance(star, satellite2)
-        if d1 <= star.radius or d2 <= star.radius:
-            break
-
-        FgravMag = (GRAVITY_ACC * star.mass * satellite2.mass) / (d2**2)
-        Fgrav = vp.norm(star.pos - satellite2.pos) * FgravMag
-        satellite2.acc = Fgrav / satellite2.mass
-        satellite2.vel += satellite2.acc * dt
-        satellite2.pos += satellite2.vel * dt
-
-        satellite2.trail.append(satellite2.pos)
-        pltX2.plot(pos=(t, satellite2.pos.x))
-        pltY2.plot(pos=(t, satellite2.pos.y))
+        step_simulation(dt, bodies)
+        visualize_trail_data(t, bodies[1], plt_x, plt_y)
 
         t += dt
-
-
-def distance(star, satellite):
-    return vp.mag(star.pos - satellite.pos)
 
 
 def setup_display():
@@ -54,30 +39,67 @@ def setup_display():
     vp.arrow(pos=vp.vector(0, 0, 0), axis=vp.vector(10, 0, 0), shaftwidth=0.3)
     vp.arrow(pos=vp.vector(0, 0, 0), axis=vp.vector(0, 10, 0), shaftwidth=0.3)
 
-    pltX1 = vp.gcurve(color=vp.color.green, size=2)
-    pltX2 = vp.gcurve(color=vp.color.red, size=2)
-    pltY1 = vp.gcurve(color=vp.color.green, size=2)
-    pltY2 = vp.gcurve(color=vp.color.red, size=2)
+    plt_x = vp.gcurve(color=vp.color.red, size=2)
+    plt_y = vp.gcurve(color=vp.color.red, size=2)
 
-    return pltX1, pltX2, pltY1, pltY2
+    return plt_x, plt_y
 
 
 def create_bodies():
     star = vp.sphere(pos=vp.vector(0, 0, 0), radius=1,
-        mass = 1000)
+        trail=vp.curve(),
+        vel=vp.vector(0, 0, 0),
+        mass=1000)
 
     satellite1 = vp.sphere(pos=vp.vector(10, -5, 0), radius=0.5, color=vp.color.green,
-        visible = True,
-        vel = vp.vector(0, 6, 0),
-        mass = 1.0,
-        trail = vp.curve())
+        trail=vp.curve(),
+        vel=vp.vector(0, 6, 0),
+        mass=1.0)
 
-    satellite2 = vp.sphere(pos=vp.vector(10, -5, 0), radius=0.5, color=vp.color.red,
-        vel = vp.vector(0, 6, 0),
-        mass = 1.0,
-        trail = vp.curve())
+    satellite2 = vp.sphere(pos=vp.vector(-8, -2, 0), radius=0.5, color=vp.color.red,
+        trail=vp.curve(),
+        vel=vp.vector(3, -9, 0),
+        mass=5.0)
 
-    return star, satellite1, satellite2
+    return [star, satellite1, satellite2]
+
+
+def step_simulation(dt, bodies):
+    for body in bodies:
+        body.force = vp.vector(0, 0, 0)
+
+    for body1, body2 in it.combinations(bodies, 2):
+        calc_forces(dt, body1, body2)
+
+    print(bodies[1].force)
+    for body in bodies:
+        integrate(dt, body)
+        body.trail.append(body.pos)
+
+
+def calc_forces(dt, body1, body2):
+    dist = vp.mag(body1.pos - body2.pos)
+    if dist <= body1.radius or dist <= body2.radius:
+        print('Impact. The end.')
+        exit()
+
+    grav_mag = (GRAVITY_ACC * body1.mass * body2.mass) / (dist**2)
+
+    dir1 = vp.norm(body2.pos - body1.pos)
+    dir2 = vp.norm(body1.pos - body2.pos)
+    body1.force += dir1 * grav_mag
+    body2.force += dir2 * grav_mag
+
+
+def integrate(dt, body):
+    body.acc = body.force / body.mass
+    body.vel += body.acc * dt
+    body.pos += body.vel * dt
+
+
+def visualize_trail_data(t, body, plt_x, plt_y):
+    plt_x.plot(pos=(t, body.pos.x))
+    plt_y.plot(pos=(t, body.pos.y))
 
 
 if __name__ == '__main__':

@@ -28,26 +28,10 @@ def main():
     while t < 3000:
         vp.rate(freq)
 
-        Fg = GRAVITY * load.mass * vp.vector(0, -1, 0)
+        step_simulation(dt, spring, load)
 
-        springDisplacement = spring.length - spring.init_length
-        Fk = -spring.const * springDisplacement * vp.vector(0, -1, 0)
-        F = Fg + Fk
-        load.acc = F / load.mass
-        load.vel += load.acc * dt
-        # load.pos += load.vel * dt + 0.5 * load.acc * dt**2
-        load.pos += load.vel * dt # TODO: który wzór ma mieć tutaj zastosowanie
-
-        plt1.plot(pos=(t, Fk.y))
-        plt2.plot(pos=(t, F.y))
-
-        # Nowa długość sprężyny
-        # spring.y == celling_y
-        spring.length = spring.pos.y - load.pos.y - load.height/2
-
-        # Warunek końca do zapętlenie gif-a
-        if t > 1 and vp.mag(load.pos - load.init_pos) < 0.1 and load.vel.y < 0:
-            pass
+        plt1.plot(pos=(t, load.force_k.y))
+        plt2.plot(pos=(t, load.force.y))
 
         t += dt
 
@@ -86,6 +70,31 @@ def create_bodies():
         vel = vp.vector(0, 0, 0))
 
     return spring, load
+
+
+def step_simulation(dt, spring, load):
+    calc_forces(dt, spring, load)
+
+
+    load.acc = load.force / load.mass
+    load.vel += load.acc * dt
+    # load.pos += load.vel * dt + 0.5 * load.acc * dt**2
+    load.pos += load.vel * dt # TODO: który wzór ma mieć tutaj zastosowanie
+
+    # Nowa długość sprężyny
+    # spring.y == celling_y
+    spring.length = spring.pos.y - load.pos.y - load.height/2
+
+
+def calc_forces(dt, spring, load):
+    force_g = GRAVITY * load.mass * vp.vector(0, -1, 0)
+
+    spring_displacement = spring.length - spring.init_length
+    force_k = -spring.const * spring_displacement * vp.vector(0, -1, 0)
+
+    load.force_k = force_k
+    load.force = force_g + force_k
+
 
 if __name__ == '__main__':
     main()

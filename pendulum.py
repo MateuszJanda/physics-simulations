@@ -17,47 +17,47 @@ import vpython as vp
 import math
 
 
-GRAVITY = 9.81  # m/s^2
-
-
-class Rod2():
-    def __init__(self, pos_y, dt):
-        self.rod = vp.cylinder(pos=vp.vector(0, pos_y, -5), length=10, radius=0.3)
-        self.rod.theta = math.radians(60)
-        self.rod.axis = self.rod.length * vp.vector(math.sin(self.rod.theta), -math.cos(self.rod.theta), 0)
-
-        self.dt = dt
-        self.thetaD1 = 0
-
-    def simulate(self):
-        thetaD2 = -GRAVITY/self.rod.length * math.sin(self.rod.theta)
-        self.thetaD1 += thetaD2 * self.dt
-        self.rod.theta += self.thetaD1 * self.dt
-
-        self.rod.axis = self.rod.length * vp.vector(math.sin(self.rod.theta), -math.cos(self.rod.theta), 0)
+GRAVITY_ACC = 9.81  # m/s^2
 
 
 def main():
-    setupDisplay()
+    setup_display()
+    rod = create_rod()
 
     freq = 100
-    dt = 1.0 / freq
+    dt = 1/freq
     t = 0
 
-    rod2 = Rod2(-2, dt)
-
-    while t < 3000:
+    while True:
         vp.rate(freq)
 
-        rod2.simulate()
+        step_simulation(dt, rod)
 
         t += dt
 
 
-def setupDisplay():
+def setup_display():
     vp.canvas(x=0, y=0, width=400, height=400,
         userzoom=False, userspin=True, autoscale=False,
         center=vp.vector(0, 0, 0), foreground=vp.color.white, background=vp.color.black)
+
+
+def create_rod():
+    THETA_ANGLE = math.radians(60)
+    LENGTH = 10
+    rod = vp.cylinder(pos=vp.vector(0, 2, -5), length=LENGTH, radius=0.3,
+        axis=LENGTH * vp.vector(math.sin(THETA_ANGLE), -math.cos(THETA_ANGLE), 0),
+        theta_d1=0,
+        theta=THETA_ANGLE)
+
+    return rod
+
+
+def step_simulation(dt, rod):
+    rod.theta_d2 = -GRAVITY_ACC/rod.length * math.sin(rod.theta)
+    rod.theta_d1 += rod.theta_d2 * dt
+    rod.theta += rod.theta_d1 * dt
+    rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)
 
 
 if __name__ == '__main__':

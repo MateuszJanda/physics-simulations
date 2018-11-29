@@ -5,62 +5,35 @@
 https://www.youtube.com/watch?v=HGcZrHnqjeg
 """
 
-from vpython import *
+import vpython as vp
 import math
-
 import os
-
 from datetime import time
 
-if os.name == 'nt':
-    import ImageGrab
-
-
-class PrintScreen:
-    def __init__(self):
-        self.frameNum = 0
-
-    def grabImage(self):
-        if os.name != 'nt':
-            return
-
-        fileName = 'img-' + '{fr:04d}'.format(fr=self.frameNum) + '.png'
-        im = ImageGrab.grab((0, 0, 400, 400))
-        im.save(fileName)
-
-        self.frameNum += 1
 
 GRAVITY = 9.81  # m/s^2
 
 
 def texture():
-    checkerboard = ( (color.blue, color.red),
-                     (color.red, color.blue) )
-    # tex = texture(data=checkerboard,
-    #     mapping="rectangular",
-    #     interpolate=False)
-
-    tex = {'file':textures.rug }
-
+    tex = {'file':vp.textures.rug }
     return tex
 
 
 def main():
     setupDisplay()
-    screen = PrintScreen()
 
     tiltAngle = 15 * (math.pi / 180)
-    posInit = vector(0, -0.5, 0)
-    slipper = box(pos=posInit, length=5)
+    posInit = vp.vector(0, -0.5, 0)
+    slipper = vp.box(pos=posInit, length=5)
     # Musi być minus, bo funkcja obraca odwrotnie do ruchu wskazówek zegara
-    slipper.rotate(angle=-tiltAngle, axis=vector(0, 0, 1))
+    slipper.rotate(angle=-tiltAngle, axis=vp.vector(0, 0, 1))
 
     tex = texture()
-    vInit = vector(0, 0, 0)
-    roller = cylinder(pos=vector(-1 * math.cos(tiltAngle) * 0.5 * slipper.length,
+    vInit = vp.vector(0, 0, 0)
+    roller = vp.cylinder(pos=vp.vector(-1 * math.cos(tiltAngle) * 0.5 * slipper.length,
                                  math.sin(tiltAngle) * 0.5 * slipper.length + 0.5,
                                  0),
-                      axis=vector(0, 0, 1), radius=0.5, texture=tex)
+                      axis=vp.vector(0, 0, 1), radius=0.5, texture=tex)
     roller.vel = vInit
     roller.velAng = 0
     roller.mass = 1.0
@@ -70,12 +43,12 @@ def main():
     dt = 1.0 / freq
     t = 0
 
-    slipDir = norm(rotate(vector(1, 0, 0), angle=-tiltAngle))
-    arrow(pos=vector(0, 2, 1), axis=slipDir)
+    slipDir = vp.norm(vp.rotate(vp.vector(1, 0, 0), angle=-tiltAngle))
+    vp.arrow(pos=vp.vector(0, 2, 1), axis=slipDir)
 
     totalAngle = 0
     while t < 3000:
-        rate(freq)
+        vp.rate(freq)
 
         # Ruch obrotowy
         # Moment bezwładności dla walca ze wzoru
@@ -109,13 +82,12 @@ def main():
             totalAngle -= (2 * math.pi)
 
         t += dt
-        screen.grabImage()
 
 
 def setupDisplay():
-    canvas(x=0, y=0, width=400, height=400,
+    vp.canvas(x=0, y=0, width=400, height=400,
         userzoom=False, userspin=True, autoscale=False,
-        center=vector(0, 0, -9), foreground=color.white, background=color.black)
+        center=vp.vector(0, 0, -9), foreground=vp.color.white, background=vp.color.black)
 
 
 if __name__ == '__main__':

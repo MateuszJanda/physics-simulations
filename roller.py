@@ -20,18 +20,9 @@ def main():
     dt = 1/freq
     t = 0
 
-    totalAngle = 0
-    while t < 3000:
+    while True:
         vp.rate(freq)
         step_simulation(dt, roller, ramp, arrow)
-
-        # Sprawdzenie, czy obrót wokół własnej osi jest równy przebytej drodze (ruch bez poślizgu)
-        # totalAngle += angle_diff
-        # if totalAngle >= 2 * math.pi:
-        #     circuit = 2 * math.pi * roller.radius
-        #     pathLen = ((-roller.pos.y - roller.radius) / math.sin(ramp.alpha)) % circuit
-        #     print('obwod: %f, droga: %f' % (circuit, pathLen))
-        #     totalAngle -= (2 * math.pi)
 
         t += dt
 
@@ -39,12 +30,12 @@ def main():
 def setup_display():
     vp.canvas(x=0, y=0, width=400, height=400,
         userzoom=False, userspin=True, autoscale=False,
-        center=vp.vector(0, 0, -9), foreground=vp.color.white, background=vp.color.black)
+        center=vp.vector(0, 1, -9), foreground=vp.color.white, background=vp.color.black)
 
 
 def create_bodies():
-    ramp = vp.box(pos=vp.vector(0, -0.5, 0), length=5,
-        alpha=15 * (math.pi / 180))
+    ramp = vp.box(pos=vp.vector(0, -0.5, 0), length=5, width=2.5,
+        alpha=vp.radians(15))
     # Musi być minus, bo funkcja obraca odwrotnie do ruchu wskazówek zegara
     ramp.rotate(angle=-ramp.alpha, axis=vp.vector(0, 0, 1))
 

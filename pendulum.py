@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
+https://pl.wikipedia.org/wiki/Wahad%C5%82o#Wahad%C5%82o_matematyczne
+https://pl.wikipedia.org/wiki/Wahad%C5%82o#Wahad%C5%82o_fizyczne
+
 http://pages.physics.cornell.edu/~sethna/StatMech/ComputerExercises/PythonSoftware/Pendulum.py
 
 http://sciaga.onet.pl/12581,60,162,104,1,22603,1,sciaga.html
@@ -47,16 +50,17 @@ def create_rod():
     LENGTH = 10
     rod = vp.cylinder(pos=vp.vector(0, 2, -5), length=LENGTH, radius=0.3,
         axis=LENGTH * vp.vector(math.sin(THETA_ANGLE), -math.cos(THETA_ANGLE), 0),
-        theta_d1=0,
+        d1_theta=0,
         theta=THETA_ANGLE)
 
     return rod
 
 
 def step_simulation(dt, rod):
-    rod.theta_d2 = -GRAVITY_ACC/rod.length * math.sin(rod.theta)
-    rod.theta_d1 += rod.theta_d2 * dt
-    rod.theta += rod.theta_d1 * dt
+    """ Mathematical pendulum """
+    rod.d2_theta = -GRAVITY_ACC/rod.length * math.sin(rod.theta)
+    rod.d1_theta += rod.d2_theta * dt
+    rod.theta += rod.d1_theta * dt
     rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)
 
 

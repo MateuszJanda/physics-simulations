@@ -24,6 +24,10 @@ def main():
         vp.rate(freq)
         step_simulation(dt, roller, ramp, arrow)
 
+        # At the end of edge end simulation
+        if -roller.pos.y + roller.radius >= math.sin(ramp.alpha) * ramp.length/2:
+            break
+
         t += dt
 
 
@@ -62,10 +66,6 @@ def texture():
 def step_simulation(dt, roller, ramp, arrow):
     calc_forces(roller, ramp.alpha)
     integrate(dt, roller, ramp.alpha)
-
-    # At the end of edge end simulation
-    if -roller.pos.y + roller.radius >= math.sin(ramp.alpha) * ramp.length/2:
-        exit()
 
 
 def calc_forces(roller, alpha):

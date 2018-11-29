@@ -26,7 +26,7 @@ def main():
         step_simulation(dt, roller, ramp, arrow)
 
         # Sprawdzenie, czy obrót wokół własnej osi jest równy przebytej drodze (ruch bez poślizgu)
-        # totalAngle += dAngle
+        # totalAngle += angle_diff
         # if totalAngle >= 2 * math.pi:
         #     circuit = 2 * math.pi * roller.radius
         #     pathLen = ((-roller.pos.y - roller.radius) / math.sin(ramp.alpha)) % circuit
@@ -55,7 +55,7 @@ def create_bodies():
         vel=vp.vector(0, 0, 0),
         ang_vel=0,
         mass=1,
-        coeffOfFriction=0.15)  # Współczynnik tarcia
+        friction_coeff=0.15)  # Współczynnik tarcia
 
     slope_dir = vp.norm(vp.rotate(vp.vector(1, 0, 0), angle=-ramp.alpha))
     arrow = vp.arrow(pos=vp.vector(0, 2, 1), axis=slope_dir)
@@ -80,7 +80,7 @@ def step_simulation(dt, roller, ramp, arrow):
 def calc_forces(roller, alpha):
     # Ruch obrotowy
     # Moment bezwładności dla walca ze wzoru
-    roller.force = roller.coeffOfFriction * roller.mass * GRAVITY * math.cos(alpha)
+    roller.force = roller.friction_coeff * roller.mass * GRAVITY * math.cos(alpha)
     roller.moment = 0.5 * roller.mass * roller.radius**2
 
 
@@ -90,16 +90,17 @@ def integrate(dt, roller, alpha):
     # Ruch środka masy
     # a = g(sin(a) - u*cos(a)) - str. 104
     # również na filmiku - "toczenie z poślizgiem" - 13:21:00
-    roller.acc2 = GRAVITY * (math.sin(alpha) - roller.coeffOfFriction * math.cos(alpha)) * slope_dir
+    roller.acc2 = GRAVITY * (math.sin(alpha) - roller.friction_coeff * math.cos(alpha)) * slope_dir
+
     # z filmiku "toczenie bez poślizgu" - 10:24:00
     roller.acc = (roller.mass * GRAVITY * math.sin(alpha)) / (roller.mass + roller.moment/roller.radius**2) * slope_dir
     roller.vel += roller.acc * dt
-    roller.pos += roller.vel * dt + 0.5 * roller.acc * dt**2
+    roller.pos += roller.vel * dt
 
     roller.ang_vel += ((roller.force * roller.radius) / roller.moment) * dt
+    angle_diff = roller.ang_vel * dt
     # Musi być minus, bo funkcja obraca odwrotnie do ruchu wskazówek zegara
-    dAngle = roller.ang_vel * dt
-    roller.rotate(angle=-dAngle)
+    roller.rotate(angle=-angle_diff)
 
 
 if __name__ == '__main__':

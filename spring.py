@@ -14,7 +14,7 @@ import vpython as vp
 import math
 
 
-GRAVITY = 9.81  # m/s^2
+GRAVITY_ACC = 9.81  # m/s^2
 
 
 def main():
@@ -78,7 +78,7 @@ def step_simulation(dt, spring, load):
 
 
 def calc_forces(dt, spring, load):
-    force_g = GRAVITY * load.mass * vp.vector(0, -1, 0)
+    force_g = GRAVITY_ACC * load.mass * vp.vector(0, -1, 0)
 
     spring_displacement = spring.length - spring.init_length
     force_k = -spring.const * spring_displacement * vp.vector(0, -1, 0)

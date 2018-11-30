@@ -52,14 +52,13 @@ def create_rods():
 
     rod_math = vp.cylinder(pos=vp.vector(0, -2, -5), length=length, radius=0.3,
         axis=length * vp.vector(math.sin(theta_angle), -math.cos(theta_angle), 0),
-        mass=5,
         d1_theta=0,
         theta=theta_angle)
     rod_math.visible = False
 
     rod_physic = vp.cylinder(pos=vp.vector(0, 2, -5), length=length, radius=0.3,
         axis=length * vp.vector(math.sin(theta_angle), -math.cos(theta_angle), 0),
-        mass=5,
+        mass=1,
         d1_theta=0,
         theta=theta_angle)
 
@@ -77,9 +76,11 @@ def step_simulation_math(dt, rod):
 def step_simulation_physic(dt, rod):
     """ Physical pendulum """
     dist_mass_center = rod.length * 1/3
-    moment = rod.length * rod.mass * dist_mass_center
 
-    rod.d2_theta = (-rod.mass * GRAVITY_ACC * dist_mass_center * math.sin(rod.theta))/moment
+    inertia = rod.length * rod.mass * dist_mass_center
+    moment = rod.mass * GRAVITY_ACC * dist_mass_center * math.sin(rod.theta)
+
+    rod.d2_theta = -moment/inertia
     rod.d1_theta += rod.d2_theta * dt
     rod.theta += rod.d1_theta * dt
     rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)

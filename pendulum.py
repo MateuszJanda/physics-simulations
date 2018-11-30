@@ -25,7 +25,7 @@ GRAVITY_ACC = 9.81  # m/s^2
 
 def main():
     setup_display()
-    rod = create_rod()
+    rod_math, rod_physic = create_rods()
 
     freq = 100
     dt = 1/freq
@@ -34,7 +34,8 @@ def main():
     while True:
         vp.rate(freq)
 
-        step_simulation(dt, rod)
+        # step_simulation_math(dt, rod_math)
+        step_simulation_physic(dt, rod_physic)
 
         t += dt
 
@@ -45,20 +46,40 @@ def setup_display():
         center=vp.vector(0, 0, 0), foreground=vp.color.white, background=vp.color.black)
 
 
-def create_rod():
-    THETA_ANGLE = math.radians(60)
-    LENGTH = 10
-    rod = vp.cylinder(pos=vp.vector(0, 2, -5), length=LENGTH, radius=0.3,
-        axis=LENGTH * vp.vector(math.sin(THETA_ANGLE), -math.cos(THETA_ANGLE), 0),
+def create_rods():
+    theta_angle = math.radians(60)
+    length = 10
+
+    rod_math = vp.cylinder(pos=vp.vector(0, -2, -5), length=length, radius=0.3,
+        axis=length * vp.vector(math.sin(theta_angle), -math.cos(theta_angle), 0),
+        mass=5,
         d1_theta=0,
-        theta=THETA_ANGLE)
+        theta=theta_angle)
+    rod_math.visible = False
 
-    return rod
+    rod_physic = vp.cylinder(pos=vp.vector(0, 2, -5), length=length, radius=0.3,
+        axis=length * vp.vector(math.sin(theta_angle), -math.cos(theta_angle), 0),
+        mass=5,
+        d1_theta=0,
+        theta=theta_angle)
+
+    return rod_math, rod_physic
 
 
-def step_simulation(dt, rod):
+def step_simulation_math(dt, rod):
     """ Mathematical pendulum """
     rod.d2_theta = -GRAVITY_ACC/rod.length * math.sin(rod.theta)
+    rod.d1_theta += rod.d2_theta * dt
+    rod.theta += rod.d1_theta * dt
+    rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)
+
+
+def step_simulation_physic(dt, rod):
+    """ Physical pendulum """
+    dist_mass_center = rod.length * 1/3
+    moment = rod.length * rod.mass * dist_mass_center
+
+    rod.d2_theta = (-rod.mass * GRAVITY_ACC * dist_mass_center * math.sin(rod.theta))/moment
     rod.d1_theta += rod.d2_theta * dt
     rod.theta += rod.d1_theta * dt
     rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)

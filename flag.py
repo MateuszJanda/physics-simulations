@@ -60,7 +60,7 @@ class StructuralSpring():
         self.particle2 = particle2
         self.length = (particle1.pos - particle2.pos).mag  # [m]
         self.k = k  # [kg/s^2]
-        self.d = SPRING_DAMPING_CONSTANT # [kg/s]
+        self.d = SPRING_DAMPING_CONSTANT  # [kg/s]
 
 
 class Collision():

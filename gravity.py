@@ -11,7 +11,7 @@ import vpython as vp
 import itertools as it
 
 
-GRAVITY_ACC = 1.0
+GRAVITY_ACC = 1.0  # [m/s^2]
 
 
 def main():

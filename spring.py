@@ -14,7 +14,7 @@ import vpython as vp
 import math
 
 
-GRAVITY_ACC = 9.81  # m/s^2
+GRAVITY_ACC = 9.81  # [m/s^2]
 
 
 def main():
@@ -54,18 +54,18 @@ def create_bodies():
     spring = vp.helix(pos=vp.vector(0, celling_y, 0), axis=vp.vector(0, -SPRING_INIT_LENGTH + 1, 0),
         thickness=1/10,
         radius=1,
-        init_length=SPRING_INIT_LENGTH,
-        const=5)  # N/m - one value for elacstic and dumping factor
+        init_length=SPRING_INIT_LENGTH,  # [m]
+        k_const=5)  # spring constant [kg/s^2]
 
     height = 2
     LOAD_INIT_POS = vp.vector(0, celling_y - spring.length - height/2, 0)
     load = vp.box(pos=LOAD_INIT_POS,
         init_pos=LOAD_INIT_POS,
-        height=height,
-        width=2,
-        length=2,
-        mass=2,  # kg
-        vel=vp.vector(0, 0, 0))
+        height=height,  # [m]
+        width=2,  # [m]
+        length=2,  # [m]
+        mass=2,  # [kg]
+        vel=vp.vector(0, 0, 0))  # [m/s^2]
 
     return spring, load
 
@@ -80,8 +80,8 @@ def step_simulation(dt, spring, load):
 def calc_forces(dt, spring, load):
     force_g = GRAVITY_ACC * load.mass * vp.vector(0, -1, 0)
 
-    spring_displacement = spring.length - spring.init_length
-    force_k = -spring.const * spring_displacement * vp.vector(0, -1, 0)
+    displacement = spring.length - spring.init_length
+    force_k = -spring.k_const * displacement * vp.vector(0, -1, 0)
 
     load.force_k = force_k
     load.force = force_g + force_k

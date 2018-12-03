@@ -20,7 +20,7 @@ import vpython as vp
 import math
 
 
-GRAVITY_ACC = 9.81  # m/s^2
+GRAVITY_ACC = 9.81  # [m/s^2]
 
 
 def main():
@@ -52,7 +52,7 @@ def create_rod():
     rod_math = vp.cylinder(pos=vp.vector(0, 2, -5), length=length, radius=0.3,
         axis=length * vp.vector(math.sin(theta_angle), -math.cos(theta_angle), 0),
         d1_theta=0,
-        theta=theta_angle)
+        theta=theta_angle)  # [rad]
 
     return rod_math
 

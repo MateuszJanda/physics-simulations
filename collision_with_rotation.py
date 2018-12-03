@@ -7,7 +7,7 @@ import math
 
 
 LINEAR_DRAG_COEFFICIENT = 0.2
-DENSITY_OF_AIR = 1.168  # kg/m^3
+DENSITY_OF_AIR = 1.168  # [kg/m^3]
 COEFFICIENT_OF_RESTITUTION = 0.5
 
 
@@ -42,23 +42,23 @@ def create_bodies():
         arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red, visible=False),
         radius=1/2 * math.sqrt(width**2 + height**2),
         mass=10,  # kg
-        moment_inertia=100,  # kg*m^2
-        area=10,  # m^2
-        vel=vp.vector(0, 0, 0),  # m/s
-        ang_vel=vp.vector(0, 0, 0),  # rad/s^2
-        theta=vp.radians(20))  # rad
+        moment_inertia=100,  # [kg*m^2]
+        area=10,  # [m^2]
+        vel=vp.vector(0, 0, 0),  # [m/s]
+        ang_vel=vp.vector(0, 0, 0),  # [rad/s^2]
+        theta=vp.radians(20))  # [rad]
 
     width = 2
     height = 3
     body2 = vp.box(pos=vp.vector(3, 0.5, 0), axis=vp.vector(0, 0, 1), width=width, height=height,
         arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue, visible=False),
         radius=1/2 * math.sqrt(width**2 + height**2),
-        mass=10,  # kg
-        moment_inertia=100,  # kg*m^2
-        area=10,  # m^2
-        vel=vp.vector(0, 0, 0),  # m/s
-        ang_vel=vp.vector(0, 0, 0),  # rad/s^2
-        theta=vp.radians(0))  # rad
+        mass=10,  # [kg]
+        moment_inertia=100,  # [kg*m^2]
+        area=10,  # [m^2]
+        vel=vp.vector(0, 0, 0),  # [m/s]
+        ang_vel=vp.vector(0, 0, 0),  # [rad/s^2]
+        theta=vp.radians(0))  # [rad]
 
     bodies = [body1, body2]
     for body in bodies:
@@ -217,7 +217,7 @@ def collision_node_edge(body1, body2):
         if vp.mag(proj_on_edge + edge) <= edge.mag or proj_on_edge.mag > edge.mag:
             continue
 
-        # Daje taki sam wynik jak dist = (proj_on_edge - p).mag
+        # Perpendicular distance to edge
         dist_to_edge = vp.mag(vp.cross(p, edge_normal))
         if dist_to_edge > DISTANCE_TOLERANCE:
             continue
@@ -264,6 +264,7 @@ def penetration_by_node(body1, body2):
 
 
 def resolve_collisions(dt, collisions):
+    # https://en.wikipedia.org/wiki/Collision_response#Computing_impulse-based_reaction
     for c in collisions:
         impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * vp.dot(c.relative_vel, c.collision_normal)) / \
             (1/c.body1.mass + 1/c.body2.mass + \

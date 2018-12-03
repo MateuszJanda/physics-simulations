@@ -7,7 +7,7 @@ import math
 
 
 LINEAR_DRAG_COEFFICIENT = 0.2
-DENSITY_OF_AIR = 1.168  # kg/m^3
+DENSITY_OF_AIR = 1.168  # [kg/m^3]
 COEFFICIENT_OF_RESTITUTION = 0.5
 
 
@@ -37,15 +37,15 @@ def setup_display():
 
 def create_bodies():
     body1 = vp.cylinder(pos=vp.vector(-5, 0, 0), axis=vp.vector(0, 0, 1), radius=1,
-        mass=10,  # kg
-        area=10,  # m^2
-        vel=vp.vector(0, 0, 0),  # m/s^2
+        mass=10,  # [kg]
+        area=10,  # [m^2]
+        vel=vp.vector(0, 0, 0),  # [m/s^2]
         arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red, visible=False))
 
     body2 = vp.cylinder(pos=vp.vector(3, 0.5, 0), axis=vp.vector(0, 0, 1), radius=1,
-        mass=10,  # kg
-        area=10,  # m^2
-        vel=vp.vector(0, 0, 0),  # m/s^2
+        mass=10,  # [kg]
+        area=10,  # [m^2]
+        vel=vp.vector(0, 0, 0),  # [m/s^2]
         arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue, visible=False))
 
     return [body1, body2]

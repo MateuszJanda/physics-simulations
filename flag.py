@@ -5,7 +5,6 @@ import math
 import vpython as vp
 from itertools import chain
 import random
-import povexport
 
 
 NUM_COLUMNS = 10
@@ -29,8 +28,8 @@ SPRING_SHEAR_CONSTANT = 600     # [kg/s^2]
 
 DRAG_COEFFICIENT = 0.01
 E_RESTITUTION = 0.25
-COLLISION_TOLERANCE = 0.05
-VELOCITY_TOLERANCE = 0.0001
+COLLISION_TOLERANCE = 0.05      # [m]
+VELOCITY_TOLERANCE = 0.0001     # [m/s^2]
 
 WIND_FACTOR = 30
 
@@ -38,30 +37,30 @@ WIND_FACTOR = 30
 class Particle:
     def __init__(self, mass, pos, surface, locked):
         self.locked = locked
-        self.mass = mass
-        self.surface = surface
+        self.mass = mass  # [kg]
+        self.surface = surface  # [m^2]
 
         # Set initial position of this particle
         self.pos = pos
 
         # Set initial velocity, acceleration and force to zero
-        self.vel = vp.vector(0, 0, 0)
-        self.acc = vp.vector(0, 0, 0)
-        self.force = vp.vector(0, 0, 0)
+        self.vel = vp.vector(0, 0, 0)  # [m/s]
+        self.acc = vp.vector(0, 0, 0)  # [m/s^2]
+        self.force = vp.vector(0, 0, 0)  # [N]
 
 
 class StructuralSpring():
     """
-    k - spring constant
-    d - damping coefficient
-    length - (normal) length of unstretched spring
+    k - spring constant [kg/s^2]
+    d - damping coefficient [kg/s]
+    length - (normal) length of unstretched spring [m]
     """
     def __init__(self, particle1, particle2, k):
         self.particle1 = particle1
         self.particle2 = particle2
-        self.length = (particle1.pos - particle2.pos).mag
-        self.k = k
-        self.d = SPRING_DAMPING_CONSTANT
+        self.length = (particle1.pos - particle2.pos).mag  # [m]
+        self.k = k  # [kg/s^2]
+        self.d = SPRING_DAMPING_CONSTANT # [kg/s]
 
 
 class Collision():
@@ -86,25 +85,14 @@ def main():
 
     t = 0
     freq = 100
-    dt = 1.0 / freq
-
-    inc_list = ['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc']
-    frame = 0
+    dt = 1/freq
 
     while True:
         vp.rate(freq)
-        step_simulation(dt, particles, struct_springs, flag)
-        t += dt
 
-        # camera {
-        #     right <-image_width/image_height, 0, 0>      // vpython uses right-handed coord. system
-        #     location <0.000000, 65.000000, 200.000000>
-        #     up <0.000000, 1.000000, 0.000000>
-        #     look_at <20.000000, 70.000000, 0.000000>
-        #     angle 0.000000
-        # }
-        # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=inc_list)
-        frame += 1
+        step_simulation(dt, particles, struct_springs, flag)
+
+        t += dt
 
 
 def setup_display():
@@ -121,7 +109,7 @@ def create_particles():
     y_offset = FLAG_POLE_HEIGHT - CLOTH_HEIGHT
 
     all_faces = 4*1 + 2*(NUM_ROWS-2)*2 + 2*(NUM_COLUMNS-2)*2 + (NUM_ROWS-2)*(NUM_COLUMNS-2)*4
-    mass_per_face = CLOTH_MASS/all_faces
+    mass_per_face = CLOTH_MASS/all_faces  # [kg]
     surface_per_face = (CLOTH_WIDTH/(NUM_ROWS*4)) * (CLOTH_HEIGHT/(NUM_COLUMNS*4))  # [m^2]
 
     for r in range(NUM_ROWS):
@@ -281,12 +269,12 @@ def check_for_collisions(particles):
         # Check for collisions with flag pole
         # Center of mass of a pole is at the same height as particle. So distance (vector) between two
         # mass centers will be also vector perpendicular to the edge of collision - page 248
-        d = particle.pos - vp.vector(0, particle.pos.y, 0)
-        n = d.norm()
-        vel_relative_norm = vp.dot(particle.vel, n)
+        dist = particle.pos - vp.vector(0, particle.pos.y, 0)
+        n = dist.norm()
+        relative_vel_n = vp.dot(particle.vel, n)
 
-        if d.mag <= (FLAG_POLE_RADIUS + COLLISION_TOLERANCE) and \
-           (0 < particle.pos.y < FLAG_POLE_HEIGHT) and (vel_relative_norm < VELOCITY_TOLERANCE):
+        if dist.mag <= (FLAG_POLE_RADIUS + COLLISION_TOLERANCE) and \
+           (0 < particle.pos.y < FLAG_POLE_HEIGHT) and (relative_vel_n < VELOCITY_TOLERANCE):
             collisions.append(Collision(particle=particle, normal=n))
 
     return collisions
@@ -294,11 +282,6 @@ def check_for_collisions(particles):
 
 def resolve_collisions(collisions):
     for c in collisions:
-        # Dziwne wzory - wersja z książki
-        # Vn = vp.dot(c.normal, c.particle.vel) * c.normal
-        # Vt = c.particle.vel - Vn
-        # c.particle.vel = (-(E_RESTITUTION+1) * Vn) + (FRICTION_FACTOR * Vt)
-
         # Impulse - page 115
         # https://en.wikipedia.org/wiki/Collision_response#Impulse-based_reaction_model
         vel_relative = c.particle.vel

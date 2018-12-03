@@ -85,7 +85,7 @@ def step_simulation(dt, bodies):
         integrate(dt, body)
 
     collisions = find_collisions(bodies)
-    resolve_collisions(collisions)
+    resolve_collisions(dt, collisions)
 
 
 def calc_forces(body):
@@ -131,13 +131,17 @@ def find_collisions(bodies):
     return collisions
 
 
-def resolve_collisions(collisions):
+def resolve_collisions(dt, collisions):
     # https://en.wikipedia.org/wiki/Collision_response#Computing_impulse-based_reaction
     for c in collisions:
         impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * vp.dot(c.relative_vel, c.collision_normal)) / \
             (1/c.body1.mass + 1/c.body2.mass)
+
         c.body1.vel += impulse * c.collision_normal / c.body1.mass
+        c.body1.pos += c.body1.vel * dt
+
         c.body2.vel -= impulse * c.collision_normal / c.body2.mass
+        c.body2.pos += c.body2.vel * dt
 
 
 if __name__ == '__main__':

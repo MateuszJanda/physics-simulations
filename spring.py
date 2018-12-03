@@ -4,7 +4,6 @@
 """
 http://showmedo.com/videotutorials/video?name=pythonThompsonVPython9&fromSeriesID=30
 http://fizyka.org/?teoria,25,2
-http://sciaga.onet.pl/12581,60,162,104,1,22603,1,sciaga.html
 http://efizyka.net.pl/sila-w-ruchu-harmonicznym_7981
 http://www.iwiedza.net/wiedza/114.html
 https://github.com/gcschmit/vpython-physics/blob/master/energy%20of%20mass%20on%20spring/massOnSpring.py

@@ -2,12 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-https://pl.wikipedia.org/wiki/Wahad%C5%82o#Wahad%C5%82o_matematyczne
-https://pl.wikipedia.org/wiki/Wahad%C5%82o#Wahad%C5%82o_fizyczne
-
 http://pages.physics.cornell.edu/~sethna/StatMech/ComputerExercises/PythonSoftware/Pendulum.py
-
-http://sciaga.onet.pl/12581,60,162,104,1,22603,1,sciaga.html
 
 http://efizyka.net.pl/wahadlo-matematyczne-i-fizyczne_8435
 http://efizyka.net.pl/ruch-harmoniczny-opis_7605
@@ -58,7 +53,9 @@ def create_rod():
 
 
 def step_simulation_math(dt, rod):
-    """ Mathematical pendulum """
+    """ Mathematical pendulum
+    https://pl.wikipedia.org/wiki/Wahad%C5%82o#Wahad%C5%82o_matematyczne
+    """
     rod.d2_theta = -GRAVITY_ACC/rod.length * math.sin(rod.theta)
     rod.d1_theta += rod.d2_theta * dt
     rod.theta += rod.d1_theta * dt

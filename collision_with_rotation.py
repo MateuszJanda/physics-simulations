@@ -114,7 +114,7 @@ def step_simulation(dt, bodies):
         integrate(dt, body)
 
     collisions = find_collisions(bodies)
-    resolve_collisions(collisions)
+    resolve_collisions(dt, collisions)
 
 
 def calc_forces(dt, body):
@@ -249,7 +249,7 @@ def penetration_by_node(body1, body2):
             edge = pt2_next - pt2
 
             p = pt1 - pt2
-            mag_proj_on_edge = vp.dot(p, edge)
+            mag_proj_on_edge = vp.dot(p, vp.norm(edge))
 
             if mag_proj_on_edge < 0:
                 penetration = False
@@ -263,7 +263,7 @@ def penetration_by_node(body1, body2):
     return None
 
 
-def resolve_collisions(collisions):
+def resolve_collisions(dt, collisions):
     for c in collisions:
         impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * vp.dot(c.relative_vel, c.collision_normal)) / \
             (1/c.body1.mass + 1/c.body2.mass + \
@@ -271,10 +271,20 @@ def resolve_collisions(collisions):
              vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt2, c.collision_normal) / c.body2.moment_inertia, c.collision_pt2)))
 
         c.body1.vel += impulse * c.collision_normal / c.body1.mass
-        c.body1.ang_vel += vp.cross(c.collision_pt1, (impulse * c.collision_normal)) / c.body1.moment_inertia
+        c.body1.pos += c.body1.vel * dt
 
         c.body2.vel -= impulse * c.collision_normal / c.body2.mass
+        c.body2.pos += c.body2.vel * dt
+
+        c.body1.ang_vel += vp.cross(c.collision_pt1, (impulse * c.collision_normal)) / c.body1.moment_inertia
+        angle_diff = c.body1.ang_vel.z * dt
+        c.body1.theta += angle_diff
+        c.body1.rotate(angle=angle_diff, axis=vp.vector(0, 0, 1))
+
         c.body2.ang_vel -= vp.cross(c.collision_pt2, (impulse * c.collision_normal)) / c.body2.moment_inertia
+        angle_diff = c.body2.ang_vel.z * dt
+        c.body2.theta += angle_diff
+        c.body2.rotate(angle=angle_diff, axis=vp.vector(0, 0, 1))
 
 
 if __name__ == '__main__':

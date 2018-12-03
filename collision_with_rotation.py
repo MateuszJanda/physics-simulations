@@ -42,11 +42,11 @@ def create_bodies():
         arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.red, visible=False),
         radius=1/2 * math.sqrt(width**2 + height**2),
         mass=10,  # kg
-        inertia=100,
+        moment_inertia=100,  # kg*m^2
         area=10,  # m^2
-        vel=vp.vector(0, 0, 0),
-        ang_vel=vp.vector(0, 0, 0),
-        theta=vp.radians(20))
+        vel=vp.vector(0, 0, 0),  # m/s
+        ang_vel=vp.vector(0, 0, 0),  # rad/s^2
+        theta=vp.radians(20))  # rad
 
     width = 2
     height = 3
@@ -54,11 +54,11 @@ def create_bodies():
         arrow=vp.arrow(pos=vp.vector(0, 0, 0), shaftwidth=0.5, color=vp.color.blue, visible=False),
         radius=1/2 * math.sqrt(width**2 + height**2),
         mass=10,  # kg
-        inertia=100,
+        moment_inertia=100,  # kg*m^2
         area=10,  # m^2
-        vel=vp.vector(0, 0, 0),
-        ang_vel=vp.vector(0, 0, 0),
-        theta=vp.radians(0))
+        vel=vp.vector(0, 0, 0),  # m/s
+        ang_vel=vp.vector(0, 0, 0),  # rad/s^2
+        theta=vp.radians(0))  # rad
 
     bodies = [body1, body2]
     for body in bodies:
@@ -124,7 +124,7 @@ def calc_forces(dt, body):
         body.force += -body.vel.norm() * LINEAR_DRAG_COEFFICIENT * 0.5 * \
             DENSITY_OF_AIR * body.vel.mag2 * body.area
 
-    body.moment = vp.vector(0, 0, 0)
+    body.moment_force = vp.vector(0, 0, 0)
 
 
 def integrate(dt, body):
@@ -132,7 +132,7 @@ def integrate(dt, body):
     body.vel += body.acc * dt
     body.pos += body.vel * dt
 
-    body.ang_acc = body.moment/body.inertia
+    body.ang_acc = body.moment_force/body.moment_inertia
     body.ang_vel += body.ang_acc * dt
     angle_diff = body.ang_vel.z * dt
     body.theta += angle_diff
@@ -209,23 +209,23 @@ def collision_node_edge(body1, body2):
 
     for pt1, (pt2, pt2_next) in it.product(body1.vertices, zip(body2.vertices, body2.vertices[1:]+body2.vertices[:1])):
         edge = pt2_next - pt2
+        edge_normal = vp.norm(edge)
 
-        u = vp.norm(edge)
         p = pt1 - pt2
-        proj = u * vp.dot(p, u)
+        proj_on_edge = edge_normal * vp.dot(p, edge_normal)
 
-        if vp.mag(proj + edge) <= edge.mag or proj.mag > edge.mag:
+        if vp.mag(proj_on_edge + edge) <= edge.mag or proj_on_edge.mag > edge.mag:
             continue
 
-        # Daje taki sam wynik jak dist = (proj - p).mag
-        dist = vp.mag(vp.cross(p, u))
-        if dist > DISTANCE_TOLERANCE:
+        # Daje taki sam wynik jak dist = (proj_on_edge - p).mag
+        dist_to_edge = vp.mag(vp.cross(p, edge_normal))
+        if dist_to_edge > DISTANCE_TOLERANCE:
             continue
 
         collision_pt1 = pt1 - body1.pos
         collision_pt2 = pt1 - body2.pos
 
-        collision_normal = vp.norm(vp.cross(vp.cross(u, p), u))
+        collision_normal = vp.norm(vp.cross(vp.cross(edge_normal, p), edge_normal))
 
         vel1 = body1.vel + vp.cross(body1.ang_vel, collision_pt1)
         vel2 = body2.vel + vp.cross(body2.ang_vel, collision_pt2)
@@ -245,17 +245,17 @@ def is_collision_course(relative_vel, collision_normal):
 def penetration_by_node(body1, body2):
     for pt1 in body1.vertices:
         penetration = True
-        for idx, pt2 in enumerate(body2.vertices):
-            edge = body2.vertices[(idx + 1) % 4] - body2.vertices[idx]
+        for pt2, pt2_next in zip(body2.vertices, body2.vertices[1:]+body2.vertices[:1]):
+            edge = pt2_next - pt2
 
             p = pt1 - pt2
-            dott = vp.dot(p, edge)
-            if dott < 0:
+            mag_proj_on_edge = vp.dot(p, edge)
+
+            if mag_proj_on_edge < 0:
                 penetration = False
                 break
 
         if penetration:
-            # TODO: Czy można to lepiej obliczyć?
             collision_normal = vp.norm(body1.pos - body2.pos)
             relative_vel = body1.vel - body2.vel
             return Collision(body1, body2, pt1, pt1, relative_vel, collision_normal)
@@ -267,14 +267,14 @@ def resolve_collisions(collisions):
     for c in collisions:
         impulse = (-(1+COEFFICIENT_OF_RESTITUTION) * vp.dot(c.relative_vel, c.collision_normal)) / \
             (1/c.body1.mass + 1/c.body2.mass + \
-             vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt1, c.collision_normal) / c.body1.inertia, c.collision_pt1)) + \
-             vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt2, c.collision_normal) / c.body2.inertia, c.collision_pt2)))
+             vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt1, c.collision_normal) / c.body1.moment_inertia, c.collision_pt1)) + \
+             vp.dot(c.collision_normal, vp.cross(vp.cross(c.collision_pt2, c.collision_normal) / c.body2.moment_inertia, c.collision_pt2)))
 
         c.body1.vel += impulse * c.collision_normal / c.body1.mass
-        c.body1.ang_vel += vp.cross(c.collision_pt1, (impulse * c.collision_normal)) / c.body1.inertia
+        c.body1.ang_vel += vp.cross(c.collision_pt1, (impulse * c.collision_normal)) / c.body1.moment_inertia
 
         c.body2.vel -= impulse * c.collision_normal / c.body2.mass
-        c.body2.ang_vel -= vp.cross(c.collision_pt2, (impulse * c.collision_normal)) / c.body2.inertia
+        c.body2.ang_vel -= vp.cross(c.collision_pt2, (impulse * c.collision_normal)) / c.body2.moment_inertia
 
 
 if __name__ == '__main__':

@@ -32,7 +32,6 @@ def main():
         frame += 1
 
         t += dt
-    print('koniec')
 
 
 def setup_display():

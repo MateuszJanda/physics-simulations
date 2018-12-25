@@ -13,31 +13,37 @@ http://efizyka.net.pl/oscylator-harmoniczny-tlumiony_8530
 
 import vpython as vp
 import math
+# import povexport
 
 
 GRAVITY_ACC = 9.81  # [m/s^2]
 
 
 def main():
-    setup_display()
+    scene = setup_display()
     rod_math = create_rod()
 
     freq = 100
     dt = 1/freq
     t = 0
 
+    frame = 0
     while True:
         vp.rate(freq)
 
         step_simulation_math(dt, rod_math)
 
+        # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
+        frame += 1
         t += dt
 
 
 def setup_display():
-    vp.canvas(x=0, y=0, width=400, height=400,
+    scene = vp.canvas(x=0, y=0, width=400, height=400,
         userzoom=False, userspin=True, autoscale=False,
         center=vp.vector(0, 0, 0), foreground=vp.color.white, background=vp.color.black)
+
+    return scene
 
 
 def create_rod():

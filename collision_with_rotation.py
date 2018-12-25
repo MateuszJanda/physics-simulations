@@ -4,6 +4,7 @@
 import vpython as vp
 import itertools as it
 import math
+# import povexport
 
 
 LINEAR_DRAG_COEFFICIENT = 0.2
@@ -12,27 +13,32 @@ COEFFICIENT_OF_RESTITUTION = 0.5
 
 
 def main():
-    setup_display()
+    scene = setup_display()
     bodies = create_bodies()
 
     freq = 100
     dt = 1/freq
     t = 0
 
-    while t < 6:
+    frame = 0
+    while t < 4:
         vp.rate(freq)
 
         set_thrust(t, bodies)
         visualize_thrust(bodies)
         step_simulation(dt, bodies)
 
+        # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
+        frame += 1
         t += dt
 
 
 def setup_display():
-    vp.canvas(x=0, y=0, width=400, height=400,
+    scene = vp.canvas(x=0, y=0, width=400, height=400,
         userzoom=False, userspin=True, autoscale=False,
         center=vp.vector(0, 0, 0), foreground=vp.color.white, background=vp.color.black)
+
+    return scene
 
 
 def create_bodies():

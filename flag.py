@@ -5,6 +5,7 @@ import math
 import vpython as vp
 from itertools import chain
 import random
+# import povexport
 
 
 NUM_COLUMNS = 10
@@ -78,8 +79,8 @@ class Seam():
 def main():
     scene = setup_display()
 
-    create_pole()
-    particles = create_particles()
+    pole = create_pole()
+    particles = create_particles(pole)
     flag = create_flag(particles)
     struct_springs = create_structural_springs(particles)
 
@@ -87,21 +88,26 @@ def main():
     freq = 100
     dt = 1/freq
 
+    frame = 0
     while True:
         vp.rate(freq)
 
         step_simulation(dt, particles, struct_springs, flag)
 
+        # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
+        frame += 1
         t += dt
 
 
 def setup_display():
-    return vp.canvas(x=0, y=0, width=640, height=360,
+    scene = vp.canvas(x=0, y=0, width=400, height=400,
                 userzoom=False, userspin=True, autoscale=False,
                 center=vp.vector(1, 8, 0), foreground=vp.color.white, background=vp.color.black)
 
+    return scene
 
-def create_particles():
+
+def create_particles(pole):
     particles = [[0 for y in range(NUM_COLUMNS)] for x in range(NUM_ROWS)]
 
     column_step = CLOTH_WIDTH/NUM_COLUMNS
@@ -125,7 +131,7 @@ def create_particles():
 
             particles[r][c] = Particle(
                 mass=faces*mass_per_face,
-                pos=vp.vector(c*column_step, (CLOTH_HEIGHT - (r*row_step)) + y_offset, 0),
+                pos=vp.vector(pole.pos.x + c*column_step, (CLOTH_HEIGHT - (r*row_step)) + y_offset, 0),
                 surface=faces*surface_per_face,
                 locked=((c == 0) and (r == 0 or r == NUM_ROWS-1)))
             particles[r][c].faces = faces
@@ -174,7 +180,7 @@ def create_structural_springs(particles):
 
 
 def create_pole():
-    pole = vp.cylinder(pos=vp.vector(0, 0, 0), axis=vp.vector(0, FLAG_POLE_HEIGHT, 0), radius=FLAG_POLE_RADIUS)
+    pole = vp.cylinder(pos=vp.vector(-2, 0, 0), axis=vp.vector(0, FLAG_POLE_HEIGHT, 0), radius=FLAG_POLE_RADIUS)
     return pole
 
 

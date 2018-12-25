@@ -11,37 +11,49 @@ https://github.com/gcschmit/vpython-physics/blob/master/energy%20of%20mass%20on%
 
 import vpython as vp
 import math
-
+# import povexport
 
 GRAVITY_ACC = 9.81  # [m/s^2]
 
 
 def main():
-    plt1, plt2 = setup_display()
+    lock = True
+    scene, plt1, plt2 = setup_display()
     spring, load = create_bodies()
 
     freq = 100
     dt = 1/freq
     t = 0
 
+    frame = 0
     while True:
         vp.rate(freq)
 
         step_simulation(dt, spring, load)
         plot_data(t, load, plt1, plt2)
 
+        # camera {
+        #     right <-image_width/image_height, 0, 0>
+        #     location <0.000000, 0.000000, 220.000000>
+        #     up <0.000000, 1.000000, 0.000000>
+        #     look_at <0.000000, 0.000000, 0.000000>
+        #     angle 0.000000
+        # }
+        # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
+        frame += 1
+
         t += dt
 
 
 def setup_display():
-    vp.canvas(x=0, y=0, width=400, height=400,
+    scene = vp.canvas(x=0, y=0, width=400, height=400,
         userzoom=False, userspin=True, autoscale=False,
         center=vp.vector(0, 0, 4), foreground=vp.color.white, background=vp.color.black)
 
     plt1 = vp.gcurve(color=vp.color.green, size=2)
     plt2 = vp.gcurve(color=vp.color.red, size=2)
 
-    return plt1, plt2
+    return scene, plt1, plt2
 
 
 def create_bodies():

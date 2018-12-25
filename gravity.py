@@ -9,30 +9,35 @@ http://showmedo.com/videotutorials/video?name=pythonThompsonVPython8&fromSeriesI
 
 import vpython as vp
 import itertools as it
+import math
+# import povexport
 
 
 GRAVITY_ACC = 1.0  # [m/s^2]
 
 
 def main():
-    plt_x, plt_y = setup_display()
+    scene, plt_x, plt_y = setup_display()
     bodies = create_bodies()
 
     freq = 100
     dt = 1/freq
     t = 0
 
+    frame = 0
     while True:
         vp.rate(freq)
 
         step_simulation(dt, bodies)
         visualize_trail_data(t, bodies[1], plt_x, plt_y)
 
+        # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
+        frame += 1
         t += dt
 
 
 def setup_display():
-    vp.canvas(x=0, y=0, width=400, height=400,
+    scene = vp.canvas(x=0, y=0, width=400, height=400,
         userzoom=False, userspin=True, autoscale=False,
         center=vp.vector(0, 0, 3), foreground=vp.color.white, background=vp.color.black)
 
@@ -42,7 +47,7 @@ def setup_display():
     plt_x = vp.gcurve(color=vp.color.red, size=2)
     plt_y = vp.gcurve(color=vp.color.red, size=2)
 
-    return plt_x, plt_y
+    return scene, plt_x, plt_y
 
 
 def create_bodies():

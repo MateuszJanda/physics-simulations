@@ -1,4 +1,5 @@
 # physics-simulations
+Playground for simple physics simulations.
 
 ## Requirements
 - [vpython](https://vpython.org/) (7.5.0)       - VPython for Jupyter Notebook

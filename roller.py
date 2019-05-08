@@ -36,6 +36,12 @@ def main():
         if -roller.pos.y + roller.radius >= math.sin(ramp.alpha) * ramp.length/2:
             break
 
+        #     texture {
+        #         pigment {checker color rgb<1,1,1> color rgb<0,0,0>}
+        #         rotate <0, 0, 0.032575>
+        #         scale 2
+        #         finish { phong 0.600000 }
+        #     }
         # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
         frame += 1
         t += dt

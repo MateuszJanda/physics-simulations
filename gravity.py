@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
+Author: Mateusz Janda <mateusz janda at gmail com>
+Site: github.com/MateuszJanda
+"""
+
+"""
+References:
 http://stackoverflow.com/questions/18620546/python-gravity-simulator-behaving-strangely
 http://spiff.rit.edu/richmond/nbody/OrbitRungeKutta4.pdf
 http://showmedo.com/videotutorials/video?name=pythonThompsonVPython8&fromSeriesID=30

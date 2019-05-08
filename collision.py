@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
+"""
+Author: Mateusz Janda <mateusz janda at gmail com>
+Site: github.com/MateuszJanda
+"""
 
 import vpython as vp
 import itertools as it
@@ -145,10 +149,7 @@ def resolve_collisions(dt, collisions):
             (1/c.body1.mass + 1/c.body2.mass)
 
         c.body1.vel += impulse * c.collision_normal / c.body1.mass
-        c.body1.pos += c.body1.vel * dt
-
         c.body2.vel -= impulse * c.collision_normal / c.body2.mass
-        c.body2.pos += c.body2.vel * dt
 
 
 if __name__ == '__main__':

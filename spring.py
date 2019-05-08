@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
+Author: Mateusz Janda <mateusz janda at gmail com>
+Site: github.com/MateuszJanda
+"""
+
+"""
+References:
 http://showmedo.com/videotutorials/video?name=pythonThompsonVPython9&fromSeriesID=30
 http://fizyka.org/?teoria,25,2
 http://efizyka.net.pl/sila-w-ruchu-harmonicznym_7981

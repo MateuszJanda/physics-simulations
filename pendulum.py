@@ -23,21 +23,24 @@ import math
 
 
 GRAVITY_ACC = 9.81  # [m/s^2]
+DAMPING = 12
 
 
 def main():
     scene = setup_display()
-    rod_math = create_rod()
+    rod_math = create_rod_math()
+    rod_damping = create_rod_damping()
 
-    freq = 100
+    freq = 30
     dt = 1/freq
     t = 0
 
     frame = 0
     while True:
-        vp.rate(freq)
+        vp.rate(100)
 
         step_simulation_math(dt, rod_math)
+        step_simulation_damping(dt, rod_damping)
 
         # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
         frame += 1
@@ -45,23 +48,42 @@ def main():
 
 
 def setup_display():
-    scene = vp.canvas(x=0, y=0, width=400, height=400,
+    scene = vp.canvas(x=0, y=0, width=600, height=400,
         userzoom=False, userspin=True, autoscale=False,
         center=vp.vector(0, 0, 0), foreground=vp.color.white, background=vp.color.black)
 
     return scene
 
 
-def create_rod():
+def create_rod_math():
     theta_angle = math.radians(60)
     length = 10
 
-    rod_math = vp.cylinder(pos=vp.vector(0, 2, -5), length=length, radius=0.3,
+    rod = vp.cylinder(pos=vp.vector(-8, 2, -5), length=length, radius=0.3,
         axis=length * vp.vector(math.sin(theta_angle), -math.cos(theta_angle), 0),
         d1_theta=0,
         theta=theta_angle)  # [rad]
 
-    return rod_math
+    return rod
+
+
+def create_rod_damping():
+    theta_angle = math.radians(60)
+    length = 10
+
+    rod = vp.cylinder(pos=vp.vector(8, 2, -5), length=length, radius=0.3,
+        mass=2,
+        axis=length * vp.vector(math.sin(theta_angle), -math.cos(theta_angle), 0),
+        d1_theta=0,
+        theta=theta_angle)  # [rad]
+
+    ball_pos = vp.vector(rod.pos.x + rod.length * math.sin(rod.theta),
+                         rod.pos.y - rod.length * math.cos(rod.theta),
+                         rod.pos.z)
+    ball = vp.sphere(pos=ball_pos, radius=1.2, color=vp.vector(1, 0, 0))
+
+    rod.body = ball
+    return rod
 
 
 def step_simulation_math(dt, rod):
@@ -72,6 +94,22 @@ def step_simulation_math(dt, rod):
     rod.d1_theta += rod.d2_theta * dt
     rod.theta += rod.d1_theta * dt
     rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)
+
+
+def step_simulation_damping(dt, rod):
+    """
+    Credits:
+    https://www.myphysicslab.com/pendulum/moveable-pendulum-en.html
+    """
+    rod.d2_theta = (-DAMPING/(rod.length**2 + rod.mass)) * rod.d1_theta - \
+            ((GRAVITY_ACC/rod.length) * math.sin(rod.theta))
+    rod.d1_theta += rod.d2_theta * dt
+    rod.theta += rod.d1_theta * dt
+    rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)
+
+    rod.body.pos = vp.vector(rod.pos.x + rod.length * math.sin(rod.theta),
+                             rod.pos.y - rod.length * math.cos(rod.theta),
+                             rod.pos.z)
 
 
 if __name__ == '__main__':

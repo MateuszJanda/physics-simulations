@@ -28,8 +28,8 @@ DAMPING = 12
 
 def main():
     scene = setup_display()
-    rod_math = create_rod_math()
-    rod_damping = create_rod_damping()
+    rod1 = create_rod_math()
+    rod2, bob2 = create_rod_damping()
 
     freq = 30
     dt = 1/freq
@@ -39,8 +39,8 @@ def main():
     while True:
         vp.rate(100)
 
-        step_simulation_math(dt, rod_math)
-        step_simulation_damping(dt, rod_damping)
+        step_simulation_math(dt, rod1)
+        step_simulation_damping(dt, rod2, bob2)
 
         # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
         frame += 1
@@ -80,10 +80,9 @@ def create_rod_damping():
     ball_pos = vp.vector(rod.pos.x + rod.length * math.sin(rod.theta),
                          rod.pos.y - rod.length * math.cos(rod.theta),
                          rod.pos.z)
-    ball = vp.sphere(pos=ball_pos, radius=1.2, color=vp.vector(1, 0, 0))
+    bob = vp.sphere(pos=ball_pos, radius=1.2, color=vp.vector(1, 0, 0))
 
-    rod.body = ball
-    return rod
+    return rod, bob
 
 
 def step_simulation_math(dt, rod):
@@ -96,7 +95,7 @@ def step_simulation_math(dt, rod):
     rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)
 
 
-def step_simulation_damping(dt, rod):
+def step_simulation_damping(dt, rod, bob):
     """
     Credits:
     https://www.myphysicslab.com/pendulum/moveable-pendulum-en.html
@@ -107,9 +106,9 @@ def step_simulation_damping(dt, rod):
     rod.theta += rod.d1_theta * dt
     rod.axis = rod.length * vp.vector(math.sin(rod.theta), -math.cos(rod.theta), 0)
 
-    rod.body.pos = vp.vector(rod.pos.x + rod.length * math.sin(rod.theta),
-                             rod.pos.y - rod.length * math.cos(rod.theta),
-                             rod.pos.z)
+    bob.pos = vp.vector(rod.pos.x + rod.length * math.sin(rod.theta),
+                        rod.pos.y - rod.length * math.cos(rod.theta),
+                        rod.pos.z)
 
 
 if __name__ == '__main__':

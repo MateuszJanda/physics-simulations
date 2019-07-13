@@ -39,7 +39,8 @@ def main():
 def setup_display():
     scene = vp.canvas(x=0, y=0, width=400, height=400,
         userzoom=False, userspin=True, autoscale=False,
-        center=vp.vector(0, 0, 0), foreground=vp.color.white, background=vp.color.black)
+        center=vp.vector(0, 0, 0), foreground=vp.color.white,
+        background=vp.color.black)
 
     return scene
 
@@ -47,22 +48,23 @@ def setup_display():
 def create_bodies():
     length1 = 9
     theta1_angle = math.radians(60)
-    rod1 = vp.cylinder(pos=vp.vector(0, 6, -10), length=length1, radius=0.3,
+    rod1 = vp.cylinder(pos=vp.vector(0, 6, -10),
+        length=length1,
+        radius=0.3,
         mass=4,
         axis=length1 * vp.vector(math.sin(theta1_angle), -math.cos(theta1_angle), 0),
-        d1_theta=0,
-        theta=theta1_angle)  # [rad]
+        theta=theta1_angle,
+        d1_theta=0)
 
     length2 = 6
     theta2_angle = math.radians(90)
-    rod2 = vp.cylinder(pos=rod1.pos + vp.vector(rod1.length * math.sin(theta1_angle),
-                                                rod1.length * -math.cos(theta1_angle),
-                                                0),
-        length=length2, radius=0.3,
+    rod2 = vp.cylinder(pos=rod1.pos + rod1.axis,
+        length=length2,
+        radius=0.3,
         mass=4,
         axis=length2 * vp.vector(math.sin(theta2_angle), -math.cos(theta2_angle), 0),
-        d1_theta=0,
-        theta=theta2_angle)  # [rad]
+        theta=theta2_angle,
+        d1_theta=0)
 
     return rod1, rod2
 
@@ -92,9 +94,7 @@ def step_simulation(dt, rod1, rod2):
                     (rod2.length * (2 * rod1.mass + rod2.mass - rod2.mass * math.cos(2 * rod1.theta - 2 * rod2.theta)))
     rod2.d1_theta += rod2.d2_theta * dt
     rod2.theta += rod2.d1_theta * dt
-    rod2.pos = rod1.pos + vp.vector(rod1.length * math.sin(rod1.theta),
-                                    rod1.length * -math.cos(rod1.theta),
-                                    0)
+    rod2.pos = rod1.pos + rod1.axis
     rod2.axis = rod2.length * vp.vector(math.sin(rod2.theta), -math.cos(rod2.theta), 0)
 
 

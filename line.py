@@ -17,13 +17,7 @@ NUM_CHAIN_LINKS = 10
 
 GRAVITY_ACC = -9.81             # [m/s^2]
 
-CLOTH_MASS = 15                 # [kg]
-CLOTH_WIDTH = 10                # [m]
-CLOTH_HEIGHT = 7                # [m]
-
-line_POLE_HEIGHT = 15           # [m]
-line_POLE_RADIUS = 0.1          # [m]
-SEAM_RADIUS = 0.05              # [m]
+LINK_MASS = 2                   # [kg]
 
 AIR_DENSITY = 1.225             # [kg/m^3]
 
@@ -75,8 +69,7 @@ class Collision():
 def main():
     scene = setup_display()
 
-    # pole = create_pole()
-    particles = create_particles(anchor1=vp.vector(-5, 0, 0), anchor2=vp.vector(5, 0, 0))
+    particles = create_particles(anchor1=-5, anchor2=5)
     create_line(particles)
     struct_springs = create_structural_springs(particles)
 
@@ -104,17 +97,17 @@ def setup_display():
     return scene
 
 
-def create_particles(anchor1, anchor2):
+def create_particles(anchor1, anchor2, height=10):
     particles = []
-    for x in np.arange(anchor1.x, anchor2.x, (anchor2.x - anchor1.x) / NUM_CHAIN_LINKS):
+    for x in np.arange(anchor1, anchor2, (anchor2 - anchor1) / NUM_CHAIN_LINKS):
         particles.append(Particle(
-            mass=1,
-            pos=vp.vector(x, 5, 0),
-            locked=(x == anchor1.x)))
+            mass=LINK_MASS,
+            pos=vp.vector(x, height, 0),
+            locked=(x == anchor1)))
 
     particles.append(Particle(
-        mass=1,
-        pos=vp.vector(anchor2.x, 5, 0),
+        mass=LINK_MASS,
+        pos=vp.vector(anchor2, height, 0),
         locked=True))
 
     return particles
@@ -136,8 +129,8 @@ def create_structural_springs(particles):
 
 def create_line(particles):
     for p1, p2 in zip(particles[:-1], particles[1:]):
-        # p1.spring = vp.helix(pos=p1.pos, axis=p1.pos - p2.pos, radius=0.3)
-        p1.spring = vp.cylinder(pos=p1.pos, axis=p1.pos - p2.pos, radius=0.1)
+        # p1.spring = vp.helix(pos=p1.pos, axis=p2.pos - p1.pos, radius=0.3)
+        p1.spring = vp.cylinder(pos=p1.pos, axis=p2.pos - p1.pos, radius=0.1)
 
 
 def step_simulation(dt, particles, struct_springs):
@@ -150,11 +143,7 @@ def step_simulation(dt, particles, struct_springs):
         particle.vel += particle.acc * dt
         particle.pos += particle.vel * dt
 
-    # Check for collisions
-    # collisions = check_for_collisions(particles)
-    # resolve_collisions(collisions)
-
-    # Update cloth object's geometry
+    # Update line geometry
     update_line_geometry(particles)
 
 
@@ -189,45 +178,6 @@ def calc_forces(particles, struct_springs):
 
         if not spring.particle2.locked:
             spring.particle2.force += f2
-
-
-# def wind_force():
-#     f = vp.norm(vp.vector(random.randrange(10), 0, random.randrange(-10, 10))) * random.randrange(WIND_FACTOR)
-#     return f
-
-
-def check_for_collisions(particles):
-    collisions = []
-
-    for particle in particles:
-        if particle.locked:
-            continue
-
-        # Check for collisions with ground
-        if (particle.pos.y <= COLLISION_TOLERANCE) and (particle.vel.y < VELOCITY_TOLERANCE):
-            collisions.append(Collision(particle=particle, normal=vp.norm(vp.vector(0, 1, 0))))
-
-        # Check for collisions with line pole
-        # Center of mass of a pole is at the same height as particle. So distance (vector) between two
-        # mass centers will be also vector perpendicular to the edge of collision - page 248
-        dist = particle.pos - vp.vector(0, particle.pos.y, 0)
-        n = dist.norm()
-        relative_vel_n = vp.dot(particle.vel, n)
-
-        if dist.mag <= (line_POLE_RADIUS + COLLISION_TOLERANCE) and \
-           (0 < particle.pos.y < line_POLE_HEIGHT) and (relative_vel_n < VELOCITY_TOLERANCE):
-            collisions.append(Collision(particle=particle, normal=n))
-
-    return collisions
-
-
-def resolve_collisions(collisions):
-    for c in collisions:
-        # Impulse - page 115
-        # https://en.wikipedia.org/wiki/Collision_response#Impulse-based_reaction_model
-        vel_relative = c.particle.vel
-        impluse = (-(E_RESTITUTION+1) * vp.dot(vel_relative, c.normal)) / (1/c.particle.mass)
-        c.particle.vel += (impluse*c.normal)/c.particle.mass
 
 
 def update_line_geometry(particles):

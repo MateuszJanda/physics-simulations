@@ -196,16 +196,31 @@ def create_flag(particles):
         for c in range(NUM_COLUMNS):
             seam = flag[r][c]
             if r+1 < NUM_ROWS and c+1 < NUM_COLUMNS:
-                seam.horiz = vp.cylinder(pos=particles[r][c].pos,
-                        axis=particles[r+1][c].pos - particles[r][c].pos, radius=SEAM_RADIUS)
-                seam.vertic = vp.cylinder(pos=particles[r][c].pos,
-                        axis=particles[r][c+1].pos - particles[r][c].pos, radius=SEAM_RADIUS)
-            elif r+1 < NUM_ROWS:
-                seam.horiz = vp.cylinder(pos=particles[r][c].pos,
-                        axis=particles[r+1][c].pos - particles[r][c].pos, radius=SEAM_RADIUS)
-            elif c+1 < NUM_COLUMNS:
-                seam.vertic = vp.cylinder(pos=particles[r][c].pos,
-                        axis=particles[r][c+1].pos - particles[r][c].pos, radius=SEAM_RADIUS)
+                # seam.horiz = vp.cylinder(pos=particles[r][c].pos,
+                #         axis=particles[r+1][c].pos - particles[r][c].pos, radius=SEAM_RADIUS)
+                # seam.vertic = vp.cylinder(pos=particles[r][c].pos,
+                #         axis=particles[r][c+1].pos - particles[r][c].pos, radius=SEAM_RADIUS)
+
+                if r >= NUM_ROWS // 2:
+                    color = vp.color.red
+                else:
+                    color = vp.color.white
+
+                seam.tr1 = vp.triangle(v0=vp.vertex(pos=particles[r][c].pos, color=color),
+                                       v1=vp.vertex(pos=particles[r][c+1].pos, color=color),
+                                       v2=vp.vertex(pos=particles[r+1][c+1].pos, color=color))
+
+                seam.tr2 = vp.triangle(v0=vp.vertex(pos=particles[r][c].pos, color=color),
+                                       v1=vp.vertex(pos=particles[r+1][c+1].pos, color=color),
+                                       v2=vp.vertex(pos=particles[r+1][c].pos, color=color))
+
+
+            # elif r+1 < NUM_ROWS:
+            #     seam.horiz = vp.cylinder(pos=particles[r][c].pos,
+            #             axis=particles[r+1][c].pos - particles[r][c].pos, radius=SEAM_RADIUS)
+            # elif c+1 < NUM_COLUMNS:
+            #     seam.vertic = vp.cylinder(pos=particles[r][c].pos,
+            #             axis=particles[r][c+1].pos - particles[r][c].pos, radius=SEAM_RADIUS)
 
     return flag
 
@@ -225,7 +240,8 @@ def step_simulation(dt, particles, struct_springs, flag):
     resolve_collisions(collisions)
 
     # Update cloth object's geometry
-    update_cloth_geometry(particles, flag)
+    # update_skeleton_geometry(particles, flag)
+    update_flag_geometry(particles, flag)
 
 
 def calc_forces(particles, struct_springs):
@@ -300,7 +316,7 @@ def resolve_collisions(collisions):
         c.particle.vel += (impluse*c.normal)/c.particle.mass
 
 
-def update_cloth_geometry(particles, flag):
+def update_skeleton_geometry(particles, flag):
     # Update flag elements
     for r in range(NUM_ROWS):
         for c in range(NUM_COLUMNS):
@@ -317,6 +333,34 @@ def update_cloth_geometry(particles, flag):
             elif c+1 < NUM_COLUMNS:
                 seam.vertic.pos = particles[r][c].pos
                 seam.vertic.axis = particles[r][c+1].pos - particles[r][c].pos
+
+
+def update_flag_geometry(particles, flag):
+    # Update flag elements
+    for r in range(NUM_ROWS):
+        for c in range(NUM_COLUMNS):
+            seam = flag[r][c]
+            if r+1 < NUM_ROWS and c+1 < NUM_COLUMNS:
+                # seam.horiz.pos = particles[r][c].pos
+                # seam.horiz.axis = particles[r+1][c].pos - particles[r][c].pos
+
+                # seam.vertic.pos = particles[r][c].pos
+                # seam.vertic.axis = particles[r][c+1].pos - particles[r][c].pos
+
+                seam.tr1.v0.pos = particles[r][c].pos
+                seam.tr1.v1.pos = particles[r][c+1].pos
+                seam.tr1.v2.pos = particles[r+1][c+1].pos
+
+                seam.tr2.v0.pos = particles[r][c].pos
+                seam.tr2.v1.pos = particles[r+1][c+1].pos
+                seam.tr2.v2.pos = particles[r+1][c].pos
+
+            # elif r+1 < NUM_ROWS:
+            #     seam.horiz.pos = particles[r][c].pos
+            #     seam.horiz.axis = particles[r+1][c].pos - particles[r][c].pos
+            # elif c+1 < NUM_COLUMNS:
+            #     seam.vertic.pos = particles[r][c].pos
+            #     seam.vertic.axis = particles[r][c+1].pos - particles[r][c].pos
 
 
 if __name__ == '__main__':

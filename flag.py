@@ -99,7 +99,8 @@ def main():
 
         step_simulation(dt, particles, struct_springs, flag)
 
-        # povexport.export(scene, filename='img-%04d.pov' % frame, include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
+        # povexport.export(scene, filename='img-%04d.pov' % frame,
+        #     include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
         frame += 1
         t += dt
 
@@ -110,6 +111,11 @@ def setup_display():
                 center=vp.vector(1, 8, 0), foreground=vp.color.white, background=vp.color.black)
 
     return scene
+
+
+def create_pole():
+    pole = vp.cylinder(pos=vp.vector(-2, 0, 0), axis=vp.vector(0, FLAG_POLE_HEIGHT, 0), radius=FLAG_POLE_RADIUS)
+    return pole
 
 
 def create_particles(pole):
@@ -153,42 +159,6 @@ def create_particles(pole):
     return particles
 
 
-def create_structural_springs(particles):
-    # Setup the structural springs
-    # Connect springs between each adjacent vertex
-    struct_springs = []
-
-    for r in range(NUM_ROWS):
-        for c in range(NUM_COLUMNS):
-            if c < NUM_COLUMNS-1:
-                struct_springs.append(StructuralSpring(
-                    particle1=particles[r][c],
-                    particle2=particles[r][c+1],
-                    k=SPRING_TENSION_CONSTANT))
-            if r < NUM_ROWS-1:
-                struct_springs.append(StructuralSpring(
-                    particle1=particles[r][c],
-                    particle2=particles[r+1][c],
-                    k=SPRING_TENSION_CONSTANT))
-            if c < NUM_COLUMNS-1 and r < NUM_ROWS-1:
-                struct_springs.append(StructuralSpring(
-                    particle1=particles[r][c],
-                    particle2=particles[r+1][c+1],
-                    k=SPRING_SHEAR_CONSTANT))
-            if c > 0 and r < NUM_ROWS-1:
-                struct_springs.append(StructuralSpring(
-                    particle1=particles[r][c],
-                    particle2=particles[r+1][c-1],
-                    k=SPRING_SHEAR_CONSTANT))
-
-    return struct_springs
-
-
-def create_pole():
-    pole = vp.cylinder(pos=vp.vector(-2, 0, 0), axis=vp.vector(0, FLAG_POLE_HEIGHT, 0), radius=FLAG_POLE_RADIUS)
-    return pole
-
-
 def create_flag(particles):
     flag = [[Seam() for y in range(NUM_COLUMNS)] for x in range(NUM_ROWS)]
 
@@ -225,6 +195,37 @@ def create_flag(particles):
     return flag
 
 
+def create_structural_springs(particles):
+    # Setup the structural springs
+    # Connect springs between each adjacent vertex
+    struct_springs = []
+
+    for r in range(NUM_ROWS):
+        for c in range(NUM_COLUMNS):
+            if c < NUM_COLUMNS-1:
+                struct_springs.append(StructuralSpring(
+                    particle1=particles[r][c],
+                    particle2=particles[r][c+1],
+                    k=SPRING_TENSION_CONSTANT))
+            if r < NUM_ROWS-1:
+                struct_springs.append(StructuralSpring(
+                    particle1=particles[r][c],
+                    particle2=particles[r+1][c],
+                    k=SPRING_TENSION_CONSTANT))
+            if c < NUM_COLUMNS-1 and r < NUM_ROWS-1:
+                struct_springs.append(StructuralSpring(
+                    particle1=particles[r][c],
+                    particle2=particles[r+1][c+1],
+                    k=SPRING_SHEAR_CONSTANT))
+            if c > 0 and r < NUM_ROWS-1:
+                struct_springs.append(StructuralSpring(
+                    particle1=particles[r][c],
+                    particle2=particles[r+1][c-1],
+                    k=SPRING_SHEAR_CONSTANT))
+
+    return struct_springs
+
+
 def step_simulation(dt, particles, struct_springs, flag):
     # Calculate all of the forces
     calc_forces(particles, struct_springs)
@@ -239,7 +240,7 @@ def step_simulation(dt, particles, struct_springs, flag):
     collisions = check_for_collisions(particles)
     resolve_collisions(collisions)
 
-    # Update cloth object's geometry
+    # Update flag/skeleton object's geometry
     # update_skeleton_geometry(particles, flag)
     update_flag_geometry(particles, flag)
 

@@ -2,6 +2,9 @@
 Playground for simple physics simulations.
 
 ## Requirements
+```
+$ pip install -r requirements.txt
+```
 - [vpython](https://vpython.org/) (7.5.0)       - VPython for Jupyter Notebook
 - animations created thanks to povexport script from [vpython-jupyter](https://github.com/BruceSherwood/vpython-jupyter) project. Also see [http://povray.org/](http://povray.org/)
 

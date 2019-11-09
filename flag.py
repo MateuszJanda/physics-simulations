@@ -84,8 +84,8 @@ class Seam():
 def main():
     scene = setup_display()
 
-    pole1 = create_pole(x=-2)
-    pole2 = create_pole(x=-5)
+    pole1 = create_pole(x=-10)
+    pole2 = create_pole(x=2)
     particles1 = create_particles(pole1)
     particles2 = create_particles(pole2)
     flag1 = create_skeleton(particles1)
@@ -100,13 +100,14 @@ def main():
     frame = 0
     while True:
         vp.rate(freq)
+        seed = random.randrange(6500)
 
         # Update skeleton object's geometry
-        step_simulation(dt, particles1, struct_springs1, flag1)
+        step_simulation(dt, particles1, struct_springs1, flag1, seed)
         update_skeleton_geometry(particles1, flag1)
 
         # Update flag object's geometry
-        step_simulation(dt, particles2, struct_springs2, flag1)
+        step_simulation(dt, particles2, struct_springs2, flag1, seed)
         update_flag_geometry(particles2, flag2)
 
         # povexport.export(scene, filename='img-%04d.pov' % frame,
@@ -116,7 +117,7 @@ def main():
 
 
 def setup_display():
-    scene = vp.canvas(x=0, y=0, width=400, height=400,
+    scene = vp.canvas(x=0, y=0, width=500, height=400,
                 userzoom=False, userspin=True, autoscale=False,
                 center=vp.vector(1, 8, 0), foreground=vp.color.white, background=vp.color.black)
 
@@ -244,9 +245,9 @@ def create_flag(particles):
     return flag
 
 
-def step_simulation(dt, particles, struct_springs, flag):
+def step_simulation(dt, particles, struct_springs, flag, seed):
     # Calculate all of the forces
-    calc_forces(particles, struct_springs)
+    calc_forces(particles, struct_springs, seed)
 
     # Integrate
     for particle in chain.from_iterable(particles):
@@ -259,7 +260,7 @@ def step_simulation(dt, particles, struct_springs, flag):
     resolve_collisions(collisions)
 
 
-def calc_forces(particles, struct_springs):
+def calc_forces(particles, struct_springs, seed):
     # Process gravity and drag forces
     for particle in chain.from_iterable(particles):
         if particle.locked:
@@ -275,7 +276,7 @@ def calc_forces(particles, struct_springs):
                 * particle.vel.mag2 * particle.surface
 
         # Wind force
-        particle.force += wind_force()
+        particle.force += wind_force(seed)
 
     # Process spring forces - page 82
     for spring in struct_springs:
@@ -292,8 +293,9 @@ def calc_forces(particles, struct_springs):
             spring.particle2.force += f2
 
 
-def wind_force():
-    f = vp.norm(vp.vector(random.randrange(10), 0, random.randrange(-10, 10))) * random.randrange(WIND_FACTOR)
+def wind_force(seed):
+    random.seed(seed)
+    f = vp.norm(vp.vector(random.randrange(10), 0, random.randrange(-6, 6))) * random.randrange(WIND_FACTOR)
     return f
 
 
@@ -332,7 +334,7 @@ def resolve_collisions(collisions):
 
 
 def update_skeleton_geometry(particles, flag):
-    # Update flag elements
+    # Update skeleton elements
     for r in range(NUM_ROWS):
         for c in range(NUM_COLUMNS):
             seam = flag[r][c]

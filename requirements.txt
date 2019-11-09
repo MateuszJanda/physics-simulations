@@ -1,1 +1,2 @@
 vpython >= 7.5.0
+sympy >= 1.4

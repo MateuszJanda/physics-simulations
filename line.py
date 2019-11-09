@@ -69,7 +69,7 @@ class Collision():
 def main():
     scene = setup_display()
 
-    links = create_chain_links(anchor1=-5, anchor2=5)
+    links = create_chain_links(anchor1=-8, anchor2=8)
     create_chain(links)
     springs = create_springs(links)
 
@@ -84,7 +84,7 @@ def main():
         step_simulation(dt, links, springs)
 
         # povexport.export(scene, filename='img-%04d.pov' % frame,
-        # include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
+        #     include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
         frame += 1
         t += dt
 
@@ -131,7 +131,7 @@ def create_springs(links):
 def create_chain(links):
     # Create VPython cylinders for each chain link
     for l1, l2 in zip(links[:-1], links[1:]):
-        l1.cylinder = vp.cylinder(pos=l1.pos, axis=l2.pos - l1.pos, radius=0.1)
+        l1.cylinder = vp.cylinder(pos=l1.pos, axis=l2.pos - l1.pos, radius=0.2)
 
 
 def step_simulation(dt, links, springs):

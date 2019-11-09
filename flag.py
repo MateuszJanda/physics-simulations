@@ -84,10 +84,14 @@ class Seam():
 def main():
     scene = setup_display()
 
-    pole = create_pole()
-    particles = create_particles(pole)
-    flag = create_flag(particles)
-    struct_springs = create_structural_springs(particles)
+    pole1 = create_pole(x=-2)
+    pole2 = create_pole(x=-5)
+    particles1 = create_particles(pole1)
+    particles2 = create_particles(pole2)
+    flag1 = create_skeleton(particles1)
+    flag2 = create_flag(particles2)
+    struct_springs1 = create_structural_springs(particles1)
+    struct_springs2 = create_structural_springs(particles2)
 
     t = 0
     freq = 100
@@ -97,7 +101,13 @@ def main():
     while True:
         vp.rate(freq)
 
-        step_simulation(dt, particles, struct_springs, flag)
+        # Update skeleton object's geometry
+        step_simulation(dt, particles1, struct_springs1, flag1)
+        update_skeleton_geometry(particles1, flag1)
+
+        # Update flag object's geometry
+        step_simulation(dt, particles2, struct_springs2, flag1)
+        update_flag_geometry(particles2, flag2)
 
         # povexport.export(scene, filename='img-%04d.pov' % frame,
         #     include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
@@ -111,11 +121,6 @@ def setup_display():
                 center=vp.vector(1, 8, 0), foreground=vp.color.white, background=vp.color.black)
 
     return scene
-
-
-def create_pole():
-    pole = vp.cylinder(pos=vp.vector(-2, 0, 0), axis=vp.vector(0, FLAG_POLE_HEIGHT, 0), radius=FLAG_POLE_RADIUS)
-    return pole
 
 
 def create_particles(pole):
@@ -159,42 +164,6 @@ def create_particles(pole):
     return particles
 
 
-def create_flag(particles):
-    flag = [[Seam() for y in range(NUM_COLUMNS)] for x in range(NUM_ROWS)]
-
-    for r in range(NUM_ROWS):
-        for c in range(NUM_COLUMNS):
-            seam = flag[r][c]
-            if r+1 < NUM_ROWS and c+1 < NUM_COLUMNS:
-                # seam.horiz = vp.cylinder(pos=particles[r][c].pos,
-                #         axis=particles[r+1][c].pos - particles[r][c].pos, radius=SEAM_RADIUS)
-                # seam.vertic = vp.cylinder(pos=particles[r][c].pos,
-                #         axis=particles[r][c+1].pos - particles[r][c].pos, radius=SEAM_RADIUS)
-
-                if r >= NUM_ROWS // 2:
-                    color = vp.color.red
-                else:
-                    color = vp.color.white
-
-                seam.tr1 = vp.triangle(v0=vp.vertex(pos=particles[r][c].pos, color=color),
-                                       v1=vp.vertex(pos=particles[r][c+1].pos, color=color),
-                                       v2=vp.vertex(pos=particles[r+1][c+1].pos, color=color))
-
-                seam.tr2 = vp.triangle(v0=vp.vertex(pos=particles[r][c].pos, color=color),
-                                       v1=vp.vertex(pos=particles[r+1][c+1].pos, color=color),
-                                       v2=vp.vertex(pos=particles[r+1][c].pos, color=color))
-
-
-            # elif r+1 < NUM_ROWS:
-            #     seam.horiz = vp.cylinder(pos=particles[r][c].pos,
-            #             axis=particles[r+1][c].pos - particles[r][c].pos, radius=SEAM_RADIUS)
-            # elif c+1 < NUM_COLUMNS:
-            #     seam.vertic = vp.cylinder(pos=particles[r][c].pos,
-            #             axis=particles[r][c+1].pos - particles[r][c].pos, radius=SEAM_RADIUS)
-
-    return flag
-
-
 def create_structural_springs(particles):
     # Setup the structural springs
     # Connect springs between each adjacent vertex
@@ -226,6 +195,55 @@ def create_structural_springs(particles):
     return struct_springs
 
 
+def create_pole(x=-2):
+    pole = vp.cylinder(pos=vp.vector(x, 0, 0), axis=vp.vector(0, FLAG_POLE_HEIGHT, 0), radius=FLAG_POLE_RADIUS)
+    return pole
+
+
+def create_skeleton(particles):
+    flag = [[Seam() for y in range(NUM_COLUMNS)] for x in range(NUM_ROWS)]
+
+    for r in range(NUM_ROWS):
+        for c in range(NUM_COLUMNS):
+            seam = flag[r][c]
+            if r+1 < NUM_ROWS and c+1 < NUM_COLUMNS:
+                seam.horiz = vp.cylinder(pos=particles[r][c].pos,
+                        axis=particles[r+1][c].pos - particles[r][c].pos, radius=SEAM_RADIUS)
+                seam.vertic = vp.cylinder(pos=particles[r][c].pos,
+                        axis=particles[r][c+1].pos - particles[r][c].pos, radius=SEAM_RADIUS)
+            elif r+1 < NUM_ROWS:
+                seam.horiz = vp.cylinder(pos=particles[r][c].pos,
+                        axis=particles[r+1][c].pos - particles[r][c].pos, radius=SEAM_RADIUS)
+            elif c+1 < NUM_COLUMNS:
+                seam.vertic = vp.cylinder(pos=particles[r][c].pos,
+                        axis=particles[r][c+1].pos - particles[r][c].pos, radius=SEAM_RADIUS)
+
+    return flag
+
+
+def create_flag(particles):
+    flag = [[Seam() for y in range(NUM_COLUMNS)] for x in range(NUM_ROWS)]
+
+    for r in range(NUM_ROWS):
+        for c in range(NUM_COLUMNS):
+            seam = flag[r][c]
+            if r+1 < NUM_ROWS and c+1 < NUM_COLUMNS:
+                if r >= NUM_ROWS // 2:
+                    color = vp.color.red
+                else:
+                    color = vp.color.white
+
+                seam.tr1 = vp.triangle(v0=vp.vertex(pos=particles[r][c].pos, color=color),
+                                       v1=vp.vertex(pos=particles[r][c+1].pos, color=color),
+                                       v2=vp.vertex(pos=particles[r+1][c+1].pos, color=color))
+
+                seam.tr2 = vp.triangle(v0=vp.vertex(pos=particles[r][c].pos, color=color),
+                                       v1=vp.vertex(pos=particles[r+1][c+1].pos, color=color),
+                                       v2=vp.vertex(pos=particles[r+1][c].pos, color=color))
+
+    return flag
+
+
 def step_simulation(dt, particles, struct_springs, flag):
     # Calculate all of the forces
     calc_forces(particles, struct_springs)
@@ -239,10 +257,6 @@ def step_simulation(dt, particles, struct_springs, flag):
     # Check for collisions
     collisions = check_for_collisions(particles)
     resolve_collisions(collisions)
-
-    # Update flag/skeleton object's geometry
-    # update_skeleton_geometry(particles, flag)
-    update_flag_geometry(particles, flag)
 
 
 def calc_forces(particles, struct_springs):
@@ -342,12 +356,6 @@ def update_flag_geometry(particles, flag):
         for c in range(NUM_COLUMNS):
             seam = flag[r][c]
             if r+1 < NUM_ROWS and c+1 < NUM_COLUMNS:
-                # seam.horiz.pos = particles[r][c].pos
-                # seam.horiz.axis = particles[r+1][c].pos - particles[r][c].pos
-
-                # seam.vertic.pos = particles[r][c].pos
-                # seam.vertic.axis = particles[r][c+1].pos - particles[r][c].pos
-
                 seam.tr1.v0.pos = particles[r][c].pos
                 seam.tr1.v1.pos = particles[r][c+1].pos
                 seam.tr1.v2.pos = particles[r+1][c+1].pos
@@ -355,13 +363,6 @@ def update_flag_geometry(particles, flag):
                 seam.tr2.v0.pos = particles[r][c].pos
                 seam.tr2.v1.pos = particles[r+1][c+1].pos
                 seam.tr2.v2.pos = particles[r+1][c].pos
-
-            # elif r+1 < NUM_ROWS:
-            #     seam.horiz.pos = particles[r][c].pos
-            #     seam.horiz.axis = particles[r+1][c].pos - particles[r][c].pos
-            # elif c+1 < NUM_COLUMNS:
-            #     seam.vertic.pos = particles[r][c].pos
-            #     seam.vertic.axis = particles[r][c+1].pos - particles[r][c].pos
 
 
 if __name__ == '__main__':

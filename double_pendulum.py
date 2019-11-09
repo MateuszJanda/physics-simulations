@@ -28,7 +28,7 @@ def main():
     while True:
         vp.rate(100)
 
-        step_simulation_notes(dt, rod1, rod2)
+        step_simulation_sympy(dt, rod1, rod2)
 
         # povexport.export(scene, filename='img-%04d.pov' % frame,
         #   include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])

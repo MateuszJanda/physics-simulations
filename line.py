@@ -21,9 +21,9 @@ LINK_MASS = 2                   # [kg]
 
 AIR_DENSITY = 1.225             # [kg/m^3]
 
-SPRING_DAMPING_CONSTANT = 2     # [kg/s]
-SPRING_TENSION_CONSTANT = 500   # [kg/s^2]
-SPRING_SHEAR_CONSTANT = 600     # [kg/s^2]
+SPRING_DAMPING_CONSTANT = 50    # [kg/s]
+SPRING_TENSION_CONSTANT = 900   # [kg/s^2]
+SPRING_SHEAR_CONSTANT = 900     # [kg/s^2]
 
 DRAG_COEFFICIENT = 0.01
 E_RESTITUTION = 0.25
@@ -32,12 +32,12 @@ VELOCITY_TOLERANCE = 0.0001     # [m/s^2]
 
 
 
-class Particle:
+class Link:
     def __init__(self, mass, pos, locked):
         self.locked = locked
         self.mass = mass  # [kg]
 
-        # Set initial position of this particle
+        # Set initial position of this link/particle
         self.pos = pos
 
         # Set initial velocity, acceleration and force to zero
@@ -46,7 +46,7 @@ class Particle:
         self.force = vp.vector(0, 0, 0)  # [N]
 
 
-class StructuralSpring():
+class Spring():
     """
     k - spring constant [kg/s^2]
     d - damping coefficient [kg/s]
@@ -69,9 +69,9 @@ class Collision():
 def main():
     scene = setup_display()
 
-    particles = create_particles(anchor1=-5, anchor2=5)
-    create_line(particles)
-    struct_springs = create_structural_springs(particles)
+    links = create_chain_links(anchor1=-5, anchor2=5)
+    create_chain(links)
+    springs = create_springs(links)
 
     t = 0
     freq = 100
@@ -81,7 +81,7 @@ def main():
     while True:
         vp.rate(freq)
 
-        step_simulation(dt, particles, struct_springs)
+        step_simulation(dt, links, springs)
 
         # povexport.export(scene, filename='img-%04d.pov' % frame,
         # include_list=['colors.inc', 'stones.inc', 'woods.inc', 'metals.inc'])
@@ -97,76 +97,68 @@ def setup_display():
     return scene
 
 
-def create_particles(anchor1, anchor2, height=10):
-    particles = []
+def create_chain_links(anchor1, anchor2, height=10):
+    links = []
     for x in np.arange(anchor1, anchor2, (anchor2 - anchor1) / NUM_CHAIN_LINKS):
-        particles.append(Particle(
-            mass=LINK_MASS,
+        links.append(Link(
+            mass=LINK_MASS * random.uniform(0.5, 1),
             pos=vp.vector(x, height, 0),
             locked=(x == anchor1)))
 
-    particles.append(Particle(
+    # Add last link
+    links.append(Link(
         mass=LINK_MASS,
         pos=vp.vector(anchor2, height, 0),
         locked=True))
 
-    return particles
+    return links
 
 
-def create_structural_springs(particles):
+def create_springs(links):
     # Setup the structural springs
     # Connect springs between each adjacent vertex
-    struct_springs = []
+    springs = []
 
-    for p1, p2 in zip(particles[:-1], particles[1:]):
-        struct_springs.append(StructuralSpring(
-            particle1=p1,
-            particle2=p2,
+    for l1, l2 in zip(links[:-1], links[1:]):
+        springs.append(Spring(
+            particle1=l1,
+            particle2=l2,
             k=SPRING_TENSION_CONSTANT))
 
-    return struct_springs
+    return springs
 
 
-def create_line(particles):
-    for p1, p2 in zip(particles[:-1], particles[1:]):
-        # p1.spring = vp.helix(pos=p1.pos, axis=p2.pos - p1.pos, radius=0.3)
-        p1.spring = vp.cylinder(pos=p1.pos, axis=p2.pos - p1.pos, radius=0.1)
+def create_chain(links):
+    # Create VPython cylinders for each chain link
+    for l1, l2 in zip(links[:-1], links[1:]):
+        l1.cylinder = vp.cylinder(pos=l1.pos, axis=l2.pos - l1.pos, radius=0.1)
 
 
-def step_simulation(dt, particles, struct_springs):
+def step_simulation(dt, links, springs):
     # Calculate all of the forces
-    calc_forces(particles, struct_springs)
+    calc_forces(links, springs)
 
     # Integrate
-    for particle in particles:
+    for particle in links:
         particle.acc = particle.force / particle.mass
         particle.vel += particle.acc * dt
         particle.pos += particle.vel * dt
 
     # Update line geometry
-    update_line_geometry(particles)
+    update_chain(links)
 
 
-def calc_forces(particles, struct_springs):
+def calc_forces(links, springs):
     # Process gravity and drag forces
-    for particle in particles:
+    for particle in links:
         if particle.locked:
             continue
 
         # Gravity
         particle.force = vp.vector(0, GRAVITY_ACC * particle.mass, 0)
 
-        # Viscous drag - page 17. Surface without rotation calculation.
-        # https://pl.wikipedia.org/wiki/Op%C3%B3r_aero(hydro)dynamiczny#Formu%C5%82y_na_wielko%C5%9B%C4%87_oporu_aero(hydro)dynamicznego
-        drag_vector = -vp.norm(particle.vel)
-        # particle.force += drag_vector * DRAG_COEFFICIENT * AIR_DENSITY * 0.5 \
-        #         * particle.vel.mag2 * particle.surface
-
-        # Wind force
-        # particle.force += wind_force()
-
     # Process spring forces - page 82
-    for spring in struct_springs:
+    for spring in springs:
         l = spring.particle1.pos - spring.particle2.pos
         relative_vel = spring.particle1.vel - spring.particle2.vel
 
@@ -180,13 +172,13 @@ def calc_forces(particles, struct_springs):
             spring.particle2.force += f2
 
 
-def update_line_geometry(particles):
-    # Update line elements
+def update_chain(links):
+    # Update chain elements
+    for l1, l2 in zip(links[:-1], links[1:]):
+        if not l1.locked:
+            l1.cylinder.pos = l1.pos
+        l1.cylinder.axis = l2.pos - l1.pos
 
-    for p1, p2 in zip(particles[:-1], particles[1:]):
-        if not p1.locked:
-            p1.spring.pos = p1.pos
-        p1.spring.axis = p2.pos - p1.pos
 
 if __name__ == '__main__':
     main()

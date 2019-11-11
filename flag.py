@@ -107,7 +107,7 @@ def main():
         update_skeleton_geometry(particles1, flag1)
 
         # Update flag object's geometry
-        step_simulation(dt, particles2, struct_springs2, flag1, seed)
+        step_simulation(dt, particles2, struct_springs2, flag2, seed)
         update_flag_geometry(particles2, flag2)
 
         # povexport.export(scene, filename='img-%04d.pov' % frame,
@@ -296,7 +296,7 @@ def calc_forces(particles, struct_springs):
 
 
 def wind_force():
-    f = vp.norm(vp.vector(random.randrange(10), 0, random.randrange(-8, 8))) * random.randrange(WIND_FACTOR)
+    f = vp.norm(vp.vector(random.randrange(10), 0, random.randrange(-20, 20))) * random.randrange(WIND_FACTOR)
     return f
 
 

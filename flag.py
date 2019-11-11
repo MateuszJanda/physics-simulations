@@ -246,8 +246,10 @@ def create_flag(particles):
 
 
 def step_simulation(dt, particles, struct_springs, flag, seed):
+    random.seed(seed)
+
     # Calculate all of the forces
-    calc_forces(particles, struct_springs, seed)
+    calc_forces(particles, struct_springs)
 
     # Integrate
     for particle in chain.from_iterable(particles):
@@ -260,7 +262,7 @@ def step_simulation(dt, particles, struct_springs, flag, seed):
     resolve_collisions(collisions)
 
 
-def calc_forces(particles, struct_springs, seed):
+def calc_forces(particles, struct_springs):
     # Process gravity and drag forces
     for particle in chain.from_iterable(particles):
         if particle.locked:
@@ -276,7 +278,7 @@ def calc_forces(particles, struct_springs, seed):
                 * particle.vel.mag2 * particle.surface
 
         # Wind force
-        particle.force += wind_force(seed)
+        particle.force += wind_force()
 
     # Process spring forces - page 82
     for spring in struct_springs:
@@ -293,9 +295,8 @@ def calc_forces(particles, struct_springs, seed):
             spring.particle2.force += f2
 
 
-def wind_force(seed):
-    random.seed(seed)
-    f = vp.norm(vp.vector(random.randrange(10), 0, random.randrange(-6, 6))) * random.randrange(WIND_FACTOR)
+def wind_force():
+    f = vp.norm(vp.vector(random.randrange(10), 0, random.randrange(-8, 8))) * random.randrange(WIND_FACTOR)
     return f
 
 

@@ -2,7 +2,7 @@
 
 """
 Author: Mateusz Janda <mateusz janda at gmail com>
-Site: github.com/MateuszJanda
+Site: github.com/MateuszJanda/physics-simulations
 Ad maiorem Dei gloriam
 """
 
